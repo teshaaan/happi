@@ -11,12 +11,11 @@ import { Terrain } from './world/Terrain.js';
 import { Environment } from './world/Environment.js';
 import { Particles } from './world/Particles.js';
 import { Fox } from './world/Fox.js';
-import { CameraController } from './world/CameraController.js';
 
 // --- 1. Core Engine Setup ---
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 5, 20);
+camera.position.set(0, 6, 14);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -28,7 +27,15 @@ document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.target.set(0, 2, 0);
+controls.enablePan = false;
+controls.enableZoom = true;
+controls.rotateSpeed = 0.65;
+controls.minDistance = 6;
+controls.maxDistance = 24;
+controls.minPolarAngle = 0.3;
+controls.maxPolarAngle = 1.35;
+
+const foxTargetOffset = new THREE.Vector3(0, 1.6, 0);
 
 // --- 2. Post-Processing (Bloom) ---
 const composer = new EffectComposer(renderer);
@@ -44,11 +51,9 @@ const environment = new Environment(scene);
 const terrain = new Terrain();
 scene.add(terrain.mesh);
 const particles = new Particles(scene, 2000);
-const fox = new Fox(scene);
+const fox = new Fox(scene, camera);
 
 // We define this here, but instantiate it in the loop once the Fox is loaded
-let cameraController = null;
-
 // --- 4. Animation Loop ---
 const clock = new THREE.Clock();
 
@@ -58,18 +63,13 @@ const animate = () => {
     const delta = clock.getDelta(); 
     const elapsedTime = clock.getElapsedTime(); // Required for terrain/fox Y-axis sync
     
-    // Initialize the camera controller only after the Fox GLTF has loaded asynchronously
-    if (fox.mesh && !cameraController) {
-        cameraController = new CameraController(camera, fox.mesh);
-    }
-    
     // Update all systems
     terrain.update(delta); 
     particles.update(delta);
     fox.update(delta, elapsedTime);
-    
-    if (cameraController) {
-        cameraController.update(delta);
+
+    if (fox.mesh) {
+        controls.target.copy(fox.mesh.position).add(foxTargetOffset);
     }
 
     controls.update();

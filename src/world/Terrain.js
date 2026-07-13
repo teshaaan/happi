@@ -36,6 +36,6 @@ export class Terrain {
     }
 
     update(delta) {
-        this.time.value += delta * 1.25;
+        // Intentionally static so the ground does not appear to flow under the fox.
     }
 }

@@ -125,12 +125,9 @@ export class Environment {
 
         this.moon = new THREE.Mesh(
             new THREE.SphereGeometry(4.2, 48, 48),
-            new THREE.MeshStandardMaterial({
+            new THREE.MeshBasicMaterial({
                 map: moonTexture,
-                roughness: 1,
-                metalness: 0,
-                emissive: new THREE.Color('#222222'),
-                emissiveIntensity: 0.18,
+                fog: false,
             })
         );
 
@@ -155,6 +152,7 @@ export class Environment {
                 opacity: 0.7,
                 blending: THREE.AdditiveBlending,
                 depthWrite: false,
+                fog: false,
             })
         );
         this.moonGlow.position.copy(this.moon.position);

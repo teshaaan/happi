@@ -3,8 +3,9 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { getTerrainHeight } from './MathUtils.js';
 
 export class Fox {
-    constructor(scene) {
+    constructor(scene, camera) {
         this.scene = scene;
+        this.camera = camera;
         this.mesh = null;
         this.mixer = null;
         this.animations = {};
@@ -23,8 +24,9 @@ export class Fox {
         this.jumpStrength = 15;
         this.isGrounded = false;
         
-        // Offset to prevent the fox from being cut in half (Tweak this based on your specific model size)
-        this.yOffset = 1.0; 
+        this.yOffset = 0.0;
+        this.modelForwardOffset = 0.0;
+        this.groundOffset = 0;
 
         this.initLoader();
         this.initControls();
@@ -42,6 +44,9 @@ export class Fox {
                     child.receiveShadow = true;
                 }
             });
+
+            const bounds = new THREE.Box3().setFromObject(this.mesh);
+            this.groundOffset = Math.max(0, -bounds.min.y);
             
             this.scene.add(this.mesh);
             this.mixer = new THREE.AnimationMixer(this.mesh);
@@ -73,42 +78,62 @@ export class Fox {
     }
 
     initControls() {
+        const resetKeys = () => {
+            this.keys.w = false;
+            this.keys.a = false;
+            this.keys.s = false;
+            this.keys.d = false;
+            this.keys[" "] = false;
+        };
+
         const handleKey = (e, isDown) => {
             const key = e.key.toLowerCase();
             if (this.keys.hasOwnProperty(key)) {
                 this.keys[key] = isDown;
-                const isMoving = this.keys.w || this.keys.a || this.keys.s || this.keys.d;
-                
-                // Play run/walk animation if grounded and moving
-                if (this.isGrounded) {
-                    if (this.animations['walk'] || this.animations['run']) {
-                        const moveAnim = this.animations['run'] ? 'run' : 'walk';
-                        this.playAnimation(isMoving ? moveAnim : 'idle');
-                    }
-                }
             }
         };
 
         window.addEventListener('keydown', (e) => handleKey(e, true));
         window.addEventListener('keyup', (e) => handleKey(e, false));
+        window.addEventListener('blur', resetKeys);
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) resetKeys();
+        });
     }
 
     update(delta) {
         if (this.mixer) this.mixer.update(delta);
         if (!this.mesh) return;
 
-        // 1. Horizontal Movement (X/Z)
+        const isMoving = this.keys.w || this.keys.a || this.keys.s || this.keys.d;
+
+        // 1. Horizontal Movement (X/Z) relative to camera direction
         this.direction.set(0, 0, 0);
-        if (this.keys.w) this.direction.z -= 1; // Forward is -Z
-        if (this.keys.s) this.direction.z += 1;
-        if (this.keys.a) this.direction.x -= 1;
-        if (this.keys.d) this.direction.x += 1;
+
+        if (this.camera) {
+            const forward = new THREE.Vector3();
+            this.camera.getWorldDirection(forward);
+            forward.y = 0;
+            forward.normalize();
+
+            const right = new THREE.Vector3();
+            right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+
+            if (this.keys.w) this.direction.add(forward);
+            if (this.keys.s) this.direction.sub(forward);
+            if (this.keys.a) this.direction.sub(right);
+            if (this.keys.d) this.direction.add(right);
+        } else {
+            if (this.keys.w) this.direction.z -= 1;
+            if (this.keys.s) this.direction.z += 1;
+            if (this.keys.a) this.direction.x -= 1;
+            if (this.keys.d) this.direction.x += 1;
+        }
 
         if (this.direction.lengthSq() > 0) {
             this.direction.normalize();
             
-            // Added Math.PI rotation offset to force the Fox to face forward correctly
-            const targetAngle = Math.atan2(this.direction.x, this.direction.z) + Math.PI;
+            const targetAngle = Math.atan2(this.direction.x, this.direction.z) + this.modelForwardOffset;
             
             const currentRotation = this.mesh.rotation.y;
             let diff = targetAngle - currentRotation;
@@ -121,30 +146,43 @@ export class Fox {
         this.mesh.position.add(this.velocity);
 
         // 2. Vertical Movement & Physics (Jumping & Gravity)
-        this.yVelocity += this.gravity * delta; // Apply gravity every frame
-        this.mesh.position.y += this.yVelocity * delta; // Apply velocity to position
-
-        // 3. Ground Collision
         const terrainHeight = getTerrainHeight(this.mesh.position.x, this.mesh.position.z);
-        const floorY = terrainHeight + this.yOffset; // Use offset to stop clipping
+        const floorY = terrainHeight + this.yOffset + this.groundOffset;
 
-        if (this.mesh.position.y <= floorY) {
-            // Fox hit the ground
+        // If the fox was grounded and didn't jump, snap it to the slope
+        if (this.isGrounded && !this.keys[" "]) {
             this.mesh.position.y = floorY;
             this.yVelocity = 0;
-            this.isGrounded = true;
-            
-            // Reset to idle/run if we just landed
-            const isMoving = this.keys.w || this.keys.a || this.keys.s || this.keys.d;
-            if (!isMoving) this.playAnimation('idle');
         } else {
-            this.isGrounded = false;
+            this.yVelocity += this.gravity * delta;
+            this.mesh.position.y += this.yVelocity * delta;
+
+            // 3. Ground Collision
+            if (this.mesh.position.y <= floorY) {
+                this.mesh.position.y = floorY;
+                this.yVelocity = 0;
+                this.isGrounded = true;
+            } else {
+                this.isGrounded = false;
+            }
         }
 
         // 4. Jump Trigger
         if (this.keys[" "] && this.isGrounded) {
             this.yVelocity = this.jumpStrength;
             this.isGrounded = false;
+        }
+
+        // Play run/idle animations. Uses 'survey' as the idle animation (since 'idle' is not in model clips)
+        if (this.isGrounded) {
+            const idleAnim = this.animations['survey'] ? 'survey' : 'idle';
+            const moveAnim = this.animations['run'] ? 'run' : (this.animations['walk'] ? 'walk' : null);
+            
+            if (isMoving && moveAnim) {
+                this.playAnimation(moveAnim);
+            } else if (idleAnim) {
+                this.playAnimation(idleAnim);
+            }
         }
     }
 }
