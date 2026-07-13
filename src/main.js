@@ -1,53 +1,89 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-// 1. Setup Scene, Camera, and Renderer
+// Post-Processing
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+
+// World Modules
+import { Terrain } from './world/Terrain.js';
+import { Environment } from './world/Environment.js';
+import { Particles } from './world/Particles.js';
+import { Fox } from './world/Fox.js';
+import { CameraController } from './world/CameraController.js';
+
+// --- 1. Core Engine Setup ---
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#e0e0e0');
-
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 5, 10);
+camera.position.set(0, 5, 20);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
-// 2. Add Lights
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-scene.add(ambientLight);
-
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-dirLight.position.set(5, 10, 5);
-dirLight.castShadow = true;
-scene.add(dirLight);
-
-// 3. Add a Ground Grid (Just like Bruno Simon's map grid)
-const gridHelper = new THREE.GridHelper(50, 50, 0x888888, 0xbbbbbb);
-scene.add(gridHelper);
-
-const groundGeo = new THREE.PlaneGeometry(50, 50);
-const groundMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.8 });
-const ground = new THREE.Mesh(groundGeo, groundMat);
-ground.rotation.x = -Math.PI / 2;
-ground.receiveShadow = true;
-scene.add(ground);
-
-// 4. Add Controls
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+controls.target.set(0, 2, 0);
 
-// 5. Animation Loop
+// --- 2. Post-Processing (Bloom) ---
+const composer = new EffectComposer(renderer);
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+
+// UnrealBloomPass(Resolution, Strength, Radius, Threshold)
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.2, 0.5, 0.85);
+composer.addPass(bloomPass);
+
+// --- 3. World Instantiation ---
+const environment = new Environment(scene);
+const terrain = new Terrain();
+scene.add(terrain.mesh);
+const particles = new Particles(scene, 2000);
+const fox = new Fox(scene);
+
+// We define this here, but instantiate it in the loop once the Fox is loaded
+let cameraController = null;
+
+// --- 4. Animation Loop ---
+const clock = new THREE.Clock();
+
 const animate = () => {
-  requestAnimationFrame(animate);
-  controls.update();
-  renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+    
+    const delta = clock.getDelta(); 
+    const elapsedTime = clock.getElapsedTime(); // Required for terrain/fox Y-axis sync
+    
+    // Initialize the camera controller only after the Fox GLTF has loaded asynchronously
+    if (fox.mesh && !cameraController) {
+        cameraController = new CameraController(camera, fox.mesh);
+    }
+    
+    // Update all systems
+    terrain.update(delta); 
+    particles.update(delta);
+    fox.update(delta, elapsedTime);
+    
+    if (cameraController) {
+        cameraController.update(delta);
+    }
+
+    controls.update();
+
+    // Render using the composer for the bloom effect, not the standard renderer
+    composer.render(); 
 };
+
 animate();
 
-// Handle Window Resize
+// --- 5. Resize Handling ---
 window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
 });
