@@ -49,17 +49,21 @@ export class Particles {
             vertexColors: true,
             uniforms: {
                 uTime: { value: 0 },
+                uMorningProgress: { value: 0.0 }
             },
             vertexShader: `
                 uniform float uTime;
+                uniform float uMorningProgress;
                 attribute float aScale;
                 attribute float aPhase;
                 varying vec3 vColor;
                 varying float vTwinkle;
+                varying float vAlpha;
 
                 void main() {
                     vColor = color;
                     vTwinkle = 0.55 + 0.45 * sin(uTime * 2.3 + aPhase);
+                    vAlpha = 1.0 - uMorningProgress;
 
                     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
                     float distanceScale = 1.0 / max(0.6, -mvPosition.z);
@@ -70,6 +74,7 @@ export class Particles {
             fragmentShader: `
                 varying vec3 vColor;
                 varying float vTwinkle;
+                varying float vAlpha;
 
                 void main() {
                     vec2 uv = gl_PointCoord - vec2(0.5);
@@ -78,7 +83,7 @@ export class Particles {
                     float glow = smoothstep(0.5, 0.15, dist);
 
                     vec3 color = vColor * (0.5 + vTwinkle * 0.85);
-                    float alpha = (core * 0.95 + glow * 0.5) * vTwinkle;
+                    float alpha = (core * 0.95 + glow * 0.5) * vTwinkle * vAlpha;
                     gl_FragColor = vec4(color, alpha);
                 }
             `,

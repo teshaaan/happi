@@ -65,7 +65,14 @@ const animate = () => {
     
     // Update all systems
     terrain.update(delta); 
+    environment.update(delta);
+
+    // Update fireflies and fade them out in morning mode
     particles.update(delta);
+    if (particles.material && particles.material.uniforms.uMorningProgress) {
+        particles.material.uniforms.uMorningProgress.value = environment.transitionProgress;
+    }
+
     fox.update(delta, elapsedTime);
 
     if (fox.mesh) {
@@ -80,7 +87,40 @@ const animate = () => {
 
 animate();
 
-// --- 5. Resize Handling ---
+// --- 5. Theme Toggle Logic ---
+const themeToggleBtn = document.getElementById('theme-toggle');
+if (themeToggleBtn) {
+    const themeLabel = themeToggleBtn.querySelector('.theme-label');
+    const toggleThumb = themeToggleBtn.querySelector('.toggle-thumb');
+
+    themeToggleBtn.addEventListener('click', () => {
+        if (environment.targetMode === 'night') {
+            environment.targetMode = 'morning';
+            document.body.classList.add('morning-active');
+            if (themeLabel) themeLabel.textContent = 'Morning';
+            if (toggleThumb) spinThumb('☀️');
+        } else {
+            environment.targetMode = 'night';
+            document.body.classList.remove('morning-active');
+            if (themeLabel) themeLabel.textContent = 'Night';
+            if (toggleThumb) spinThumb('🌙');
+        }
+    });
+
+    const spinThumb = (emoji) => {
+        toggleThumb.style.transition = 'transform 0.15s ease-in, opacity 0.15s ease-in';
+        toggleThumb.style.transform = 'scale(0.2) rotate(180deg)';
+        toggleThumb.style.opacity = '0';
+        setTimeout(() => {
+            toggleThumb.textContent = emoji;
+            toggleThumb.style.transition = 'transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s';
+            toggleThumb.style.transform = 'scale(1) rotate(360deg)';
+            toggleThumb.style.opacity = '1';
+        }, 150);
+    };
+}
+
+// --- 6. Resize Handling ---
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();

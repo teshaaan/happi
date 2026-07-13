@@ -294,3 +294,119 @@ code {
     border-right-color: var(--border);
   }
 }
+
+/* Custom Canvas Styling to Fix it in the Viewport Background */
+canvas {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1; /* Render behind UI overlay */
+  pointer-events: auto;
+}
+
+/* Modern Theme Toggle Container */
+.theme-toggle-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+}
+
+/* Glassmorphic Capsule Button */
+.theme-toggle-btn {
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 30px;
+  padding: 6px 14px;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.theme-toggle-btn:hover {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.theme-toggle-btn:active {
+  transform: translateY(0);
+}
+
+/* Glassmorphic Switch Track and Sliding Thumb */
+.toggle-track {
+  position: relative;
+  width: 50px;
+  height: 26px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 15px;
+  transition: background-color 0.4s;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  background: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+  user-select: none;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s;
+}
+
+/* Theme Label text */
+.theme-label {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #ffffff;
+  pointer-events: none;
+  user-select: none;
+  transition: color 0.3s;
+}
+
+/* Morning Mode Active Overrides */
+.morning-active .toggle-track {
+  background: rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.morning-active .toggle-thumb {
+  transform: translateX(24px);
+  background: #fff8eb;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.morning-active .theme-label {
+  color: #1e293b;
+}
+
+.morning-active .theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(15, 23, 42, 0.12);
+  box-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.08);
+}
+
+.morning-active .theme-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(15, 23, 42, 0.22);
+}
