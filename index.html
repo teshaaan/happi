@@ -16,6 +16,44 @@
       </button>
     </div>
     <div id="app"></div>
+
+    <!-- Game UI overlay: Character Switcher and Control Guide -->
+    <div class="game-ui-container">
+      <!-- Top Left Selector -->
+      <div class="character-selector">
+        <button id="select-fox" class="selector-btn active" data-char="fox">
+          <span class="btn-icon">🦊</span>
+          <span class="btn-text">Fox Mode</span>
+        </button>
+        <button id="select-duck" class="selector-btn" data-char="duck">
+          <span class="btn-icon">🦆</span>
+          <span class="btn-text">Duck Flight</span>
+        </button>
+      </div>
+
+      <!-- Bottom Left Instructions -->
+      <div id="instruction-panel" class="instruction-card">
+        <h3 id="controls-title">🦊 Fox Controls</h3>
+        <div id="controls-list" class="controls-list">
+          <div class="control-item">
+            <span class="key-cap">W</span>
+            <span class="key-cap">A</span>
+            <span class="key-cap">S</span>
+            <span class="key-cap">D</span>
+            <span class="control-desc">Move ground</span>
+          </div>
+          <div class="control-item">
+            <span class="key-cap">Space</span>
+            <span class="control-desc">Jump</span>
+          </div>
+          <div class="control-item font-subtle">
+            <span class="key-cap">T</span>
+            <span class="control-desc">Switch character</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

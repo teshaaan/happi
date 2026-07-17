@@ -11,6 +11,7 @@ import { Terrain } from './world/Terrain.js';
 import { Environment } from './world/Environment.js';
 import { Particles } from './world/Particles.js';
 import { Fox } from './world/Fox.js';
+import { Duck } from './world/Duck.js';
 
 // --- 1. Core Engine Setup ---
 const scene = new THREE.Scene();
@@ -36,6 +37,7 @@ controls.minPolarAngle = 0.3;
 controls.maxPolarAngle = 1.35;
 
 const foxTargetOffset = new THREE.Vector3(0, 1.6, 0);
+const duckTargetOffset = new THREE.Vector3(0, 1.2, 0);
 
 // --- 2. Post-Processing (Bloom) ---
 const composer = new EffectComposer(renderer);
@@ -52,15 +54,110 @@ const terrain = new Terrain();
 scene.add(terrain.mesh);
 const particles = new Particles(scene, 2000);
 const fox = new Fox(scene, camera);
+const duck = new Duck(scene, camera);
 
-// We define this here, but instantiate it in the loop once the Fox is loaded
-// --- 4. Animation Loop ---
+// --- 4. Character Switching Logic & UI Integration ---
+let activeCharacter = 'fox';
+
+const selectFoxBtn = document.getElementById('select-fox');
+const selectDuckBtn = document.getElementById('select-duck');
+const controlsTitle = document.getElementById('controls-title');
+const controlsList = document.getElementById('controls-list');
+
+const foxControlsHTML = `
+  <div class="control-item">
+    <span class="key-cap">W</span>
+    <span class="key-cap">A</span>
+    <span class="key-cap">S</span>
+    <span class="key-cap">D</span>
+    <span class="control-desc">Move ground</span>
+  </div>
+  <div class="control-item">
+    <span class="key-cap">Space</span>
+    <span class="control-desc">Jump</span>
+  </div>
+  <div class="control-item font-subtle">
+    <span class="key-cap">T</span>
+    <span class="control-desc">Switch character</span>
+  </div>
+`;
+
+const duckControlsHTML = `
+  <div class="control-item">
+    <span class="key-cap">W</span>
+    <span class="key-cap">A</span>
+    <span class="key-cap">S</span>
+    <span class="key-cap">D</span>
+    <span class="control-desc">Move (Grounded/Airborne)</span>
+  </div>
+  <div class="control-item">
+    <span class="key-cap">Space</span>
+    <span class="control-desc">Jump (Ground) / Flap (Air)</span>
+  </div>
+  <div class="control-item font-subtle">
+    <span class="key-cap">T</span>
+    <span class="control-desc">Switch character</span>
+  </div>
+`;
+
+const switchCharacter = (char) => {
+    if (char === activeCharacter) return;
+    
+    if (char === 'fox') {
+        activeCharacter = 'fox';
+        fox.setActive(true);
+        duck.setActive(false);
+        
+        // Reset camera Up to prevent any leftover roll from flight
+        camera.up.set(0, 1, 0);
+
+        // Update UI
+        if (selectFoxBtn) selectFoxBtn.classList.add('active');
+        if (selectDuckBtn) selectDuckBtn.classList.remove('active');
+        if (controlsTitle) controlsTitle.innerHTML = '🦊 Fox Controls';
+        if (controlsList) controlsList.innerHTML = foxControlsHTML;
+    } else {
+        activeCharacter = 'duck';
+        fox.setActive(false);
+        duck.setActive(true);
+
+        // Update UI
+        if (selectFoxBtn) selectFoxBtn.classList.remove('active');
+        if (selectDuckBtn) selectDuckBtn.classList.add('active');
+        if (controlsTitle) controlsTitle.innerHTML = '🦆 Duck Flight';
+        if (controlsList) controlsList.innerHTML = duckControlsHTML;
+    }
+    
+    // Smoothly reset camera to orbit mode controls
+    controls.enabled = true;
+};
+
+// UI click listeners
+if (selectFoxBtn) selectFoxBtn.addEventListener('click', () => switchCharacter('fox'));
+if (selectDuckBtn) selectDuckBtn.addEventListener('click', () => switchCharacter('duck'));
+
+// Keyboard T listener to switch character
+window.addEventListener('keydown', (e) => {
+    if (e.key === 't' || e.key === 'T') {
+        if (activeCharacter === 'fox') {
+            switchCharacter('duck');
+        } else {
+            switchCharacter('fox');
+        }
+    }
+});
+
+// Set initial states
+fox.setActive(true);
+duck.setActive(false);
+
+// --- 5. Animation Loop ---
 const clock = new THREE.Clock();
 
 const animate = () => {
     requestAnimationFrame(animate);
     
-    const delta = clock.getDelta(); 
+    const delta = Math.min(clock.getDelta(), 0.1); // Cap delta to prevent physics glitches when tabbed out
     const elapsedTime = clock.getElapsedTime(); // Required for terrain/fox Y-axis sync
     
     // Update all systems
@@ -73,12 +170,19 @@ const animate = () => {
         particles.material.uniforms.uMorningProgress.value = environment.transitionProgress;
     }
 
+    // Always update both meshes to run idle/move animations
     fox.update(delta, elapsedTime);
+    duck.update(delta);
 
-    if (fox.mesh) {
-        controls.target.copy(fox.mesh.position).add(foxTargetOffset);
+    if (activeCharacter === 'fox') {
+        if (fox.mesh) {
+            controls.target.copy(fox.mesh.position).add(foxTargetOffset);
+        }
+    } else {
+        if (duck.mesh) {
+            controls.target.copy(duck.mesh.position).add(duckTargetOffset);
+        }
     }
-
     controls.update();
 
     // Render using the composer for the bloom effect, not the standard renderer

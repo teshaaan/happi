@@ -27,6 +27,7 @@ export class Fox {
         this.yOffset = 0.0;
         this.modelForwardOffset = 0.0;
         this.groundOffset = 0;
+        this.active = true;
 
         this.initLoader();
         this.initControls();
@@ -36,7 +37,13 @@ export class Fox {
         const loader = new GLTFLoader();
         loader.load('/fox.glb', (gltf) => {
             this.mesh = gltf.scene;
-            this.mesh.scale.set(0.05, 0.05, 0.05); 
+
+            // Normalize imported models to a consistent in-world height.
+            const rawBounds = new THREE.Box3().setFromObject(this.mesh);
+            const rawSize = rawBounds.getSize(new THREE.Vector3());
+            const targetHeight = 4;
+            const scale = targetHeight / Math.max(rawSize.y, 0.001);
+            this.mesh.scale.setScalar(scale);
             
             this.mesh.traverse((child) => {
                 if (child.isMesh) {
@@ -77,6 +84,25 @@ export class Fox {
         this.currentAction = action;
     }
 
+    setActive(active) {
+        this.active = active;
+        if (!active) {
+            // Reset keys
+            this.keys.w = false;
+            this.keys.a = false;
+            this.keys.s = false;
+            this.keys.d = false;
+            this.keys[" "] = false;
+            this.velocity.set(0, 0, 0);
+            this.direction.set(0, 0, 0);
+            
+            const idleAnim = this.animations['survey'] ? 'survey' : 'idle';
+            if (idleAnim) {
+                this.playAnimation(idleAnim);
+            }
+        }
+    }
+
     initControls() {
         const resetKeys = () => {
             this.keys.w = false;
@@ -87,6 +113,7 @@ export class Fox {
         };
 
         const handleKey = (e, isDown) => {
+            if (!this.active) return;
             const key = e.key.toLowerCase();
             if (this.keys.hasOwnProperty(key)) {
                 this.keys[key] = isDown;
