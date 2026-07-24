@@ -4,56 +4,15 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>happi</title>
+    <title>HAPPI - 3D Interactive World</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   </head>
   <body>
-    <div class="theme-toggle-container">
-      <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle theme">
-        <div class="toggle-track">
-          <span class="toggle-thumb">🌙</span>
-        </div>
-        <span class="theme-label">Night</span>
-      </button>
-    </div>
-    <div id="app"></div>
+    <!-- React Root Mount Point -->
+    <div id="root"></div>
 
-    <!-- Game UI overlay: Character Switcher and Control Guide -->
-    <div class="game-ui-container">
-      <!-- Top Left Selector -->
-      <div class="character-selector">
-        <button id="select-fox" class="selector-btn active" data-char="fox">
-          <span class="btn-icon">🦊</span>
-          <span class="btn-text">Fox Mode</span>
-        </button>
-        <button id="select-duck" class="selector-btn" data-char="duck">
-          <span class="btn-icon">🦆</span>
-          <span class="btn-text">Duck Flight</span>
-        </button>
-      </div>
-
-      <!-- Bottom Left Instructions -->
-      <div id="instruction-panel" class="instruction-card">
-        <h3 id="controls-title">🦊 Fox Controls</h3>
-        <div id="controls-list" class="controls-list">
-          <div class="control-item">
-            <span class="key-cap">W</span>
-            <span class="key-cap">A</span>
-            <span class="key-cap">S</span>
-            <span class="key-cap">D</span>
-            <span class="control-desc">Move ground</span>
-          </div>
-          <div class="control-item">
-            <span class="key-cap">Space</span>
-            <span class="control-desc">Jump</span>
-          </div>
-          <div class="control-item font-subtle">
-            <span class="key-cap">T</span>
-            <span class="control-desc">Switch character</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <script type="module" src="/src/main.js"></script>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

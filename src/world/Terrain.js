@@ -31,6 +31,7 @@ export class Terrain {
         this.baseMesh = new THREE.Mesh(this.geometry, this.material);
         this.baseMesh.rotation.x = -Math.PI / 2;
         this.baseMesh.position.y = 0.0;
+        this.baseMesh.castShadow = true;
         this.baseMesh.receiveShadow = true;
         this.landscapeGroup.add(this.baseMesh);
         registerTerrainMesh(this.baseMesh);

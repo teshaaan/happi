@@ -120,6 +120,8 @@ export class Environment {
         this.moonLight.shadow.camera.bottom = -shadowSize;
         this.moonLight.shadow.camera.near = 0.5;
         this.moonLight.shadow.camera.far = 650;
+        this.moonLight.shadow.bias = -0.0003;
+        this.moonLight.shadow.normalBias = 0.04;
 
         this.scene.add(this.moonLight);
 
@@ -241,7 +243,7 @@ export class Environment {
     }
 
     setupSun() {
-        // Sunlight Directional Light
+        // Sunlight Directional Light (acting as the Sun)
         this.sunLight = new THREE.DirectionalLight('#fffaed', 0.0);
         this.sunLight.position.set(-160, 200, 180);
         this.sunLight.castShadow = true;
@@ -254,8 +256,11 @@ export class Environment {
         this.sunLight.shadow.camera.bottom = -shadowSize;
         this.sunLight.shadow.camera.near = 0.5;
         this.sunLight.shadow.camera.far = 650;
+        this.sunLight.shadow.bias = -0.0003;
+        this.sunLight.shadow.normalBias = 0.04;
 
         this.scene.add(this.sunLight);
+        this.scene.add(this.sunLight.target);
 
         // Sun mesh texture
         const sunTexture = this.createCanvasTexture((context, width, height) => {
