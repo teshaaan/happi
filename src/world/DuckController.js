@@ -30,8 +30,8 @@ export class DuckController {
         // Offsets & Pond parameters
         this.groundOffset = 0.0;
         this.yOffset = 0.2;
-        this.pondCenter = new THREE.Vector2(45.0, -35.0);
-        this.pondRadius = 20.5;
+        this.pondCenter = new THREE.Vector2(25.0, -20.0);
+        this.pondRadius = 19.5;
 
         // Inputs
         this.keys = {

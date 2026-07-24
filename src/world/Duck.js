@@ -102,7 +102,7 @@ export class Duck {
 
     updateSpawnPosition() {
         if (!this.mesh) return;
-        const pondX = 45.0, pondZ = -35.0;
+        const pondX = 25.0, pondZ = -20.0;
         const terrainY = getTerrainHeight(pondX, pondZ);
         const waterY = terrainY + 0.15;
         this.mesh.position.set(pondX, waterY + 0.1, pondZ);

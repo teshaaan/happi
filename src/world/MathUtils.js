@@ -30,8 +30,7 @@ export function fallbackTerrainHeight(x, z) {
 }
 
 /**
- * Returns the exact ground surface height at (x, z).
- * Guarantees smooth, continuous height and eliminates invisible falling holes.
+ * Returns the exact top surface height of the 3D landscape (hills, mountains, paths) at (x, z).
  */
 export function getTerrainHeight(x, z) {
     if (terrainMeshes.length > 0) {
@@ -39,20 +38,12 @@ export function getTerrainHeight(x, z) {
         raycaster.set(rayOrigin, rayDirection);
         const intersects = raycaster.intersectObjects(terrainMeshes, true);
         
-        for (let i = 0; i < intersects.length; i++) {
-            const hit = intersects[i];
-            const normY = hit.face ? hit.face.normal.y : 1.0;
-            // Only consider top-facing surfaces (normal.y > 0.1)
-            if (normY > 0.1) {
-                return Math.max(0.0, hit.point.y);
-            }
-        }
-
         if (intersects.length > 0) {
-            return Math.max(0.0, intersects[0].point.y);
+            // Return top-most surface elevation at (x, z)
+            return intersects[0].point.y;
         }
     }
-    return Math.max(0.0, fallbackTerrainHeight(x, z));
+    return fallbackTerrainHeight(x, z);
 }
 
 /**
@@ -71,7 +62,6 @@ export function isObstacleInDirection(pos, direction, checkDistance = 1.2) {
     if (hits.length > 0) {
         const hit = hits[0];
         const normY = hit.face ? Math.abs(hit.face.normal.y) : 1.0;
-        // If surface is steep wall or rock face (normY < 0.65), treat as obstacle
         if (normY < 0.65) {
             return true;
         }

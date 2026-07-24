@@ -68,12 +68,8 @@ export class Terrain {
                         child.material.roughness = 0.85;
                         child.material.metalness = 0.05;
                     }
-                    // Register ground/landscape plane meshes as terrain raycast targets.
-                    // Exclude tree foliage blocks and prop cubes to eliminate mid-air foliage hits and falling holes.
-                    const name = child.name.toLowerCase();
-                    if (name.includes('plane') || name.includes('ground') || name.includes('land') || name.includes('terrain')) {
-                        registerTerrainMesh(child);
-                    }
+                    // Register all 3D landscape surface meshes so characters walk on top of hills, mountains, and paths
+                    registerTerrainMesh(child);
                 }
             });
 

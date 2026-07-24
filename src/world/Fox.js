@@ -211,7 +211,7 @@ export class Fox {
         }
 
         // Prevent Fox from entering the Pond (Fox cannot swim)
-        const pondX = 45.0, pondZ = -35.0, pondRadius = 22.0;
+        const pondX = 25.0, pondZ = -20.0, pondRadius = 20.0;
         const distToPond = Math.hypot(this.mesh.position.x - pondX, this.mesh.position.z - pondZ);
         if (distToPond < pondRadius) {
             const angle = Math.atan2(this.mesh.position.z - pondZ, this.mesh.position.x - pondX);
