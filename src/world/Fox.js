@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { getTerrainHeight } from './MathUtils.js';
+import { getTerrainHeight, isObstacleInDirection } from './MathUtils.js';
 
 export class Fox {
     constructor(scene, camera) {
@@ -54,6 +54,9 @@ export class Fox {
 
             const bounds = new THREE.Box3().setFromObject(this.mesh);
             this.groundOffset = Math.max(0, -bounds.min.y);
+
+            // Spawn Fox at the Fox Den entrance (-32, 25)
+            this.updateSpawnPosition();
             
             this.scene.add(this.mesh);
             this.mixer = new THREE.AnimationMixer(this.mesh);
@@ -69,6 +72,15 @@ export class Fox {
                 this.currentAction.play();
             }
         });
+    }
+
+    updateSpawnPosition() {
+        if (!this.mesh) return;
+        const spawnX = -32.0, spawnZ = 25.0;
+        const spawnY = getTerrainHeight(spawnX, spawnZ) + this.groundOffset + this.yOffset;
+        this.mesh.position.set(spawnX, spawnY, spawnZ);
+        this.isGrounded = true;
+        this.yVelocity = 0;
     }
 
     playAnimation(name) {
@@ -133,6 +145,9 @@ export class Fox {
         if (!this.mesh) return;
 
         const isMoving = this.keys.w || this.keys.a || this.keys.s || this.keys.d;
+        const prevX = this.mesh.position.x;
+        const prevZ = this.mesh.position.z;
+        const prevY = this.mesh.position.y;
 
         // 1. Horizontal Movement (X/Z) relative to camera direction
         this.direction.set(0, 0, 0);
@@ -170,13 +185,44 @@ export class Fox {
         }
 
         this.velocity.copy(this.direction).multiplyScalar(this.speed * delta);
-        this.mesh.position.add(this.velocity);
+        
+        // Prevent walking straight into steep rock walls/obstacles
+        const isBlocked = isObstacleInDirection(this.mesh.position, this.direction, 1.2);
+        if (!isBlocked) {
+            this.mesh.position.add(this.velocity);
+        } else {
+            // Wall sliding on single axes if unblocked
+            const tryX = new THREE.Vector3(this.velocity.x, 0, 0);
+            const tryZ = new THREE.Vector3(0, 0, this.velocity.z);
+            if (tryX.lengthSq() > 0 && !isObstacleInDirection(this.mesh.position, tryX.clone().normalize(), 1.0)) {
+                this.mesh.position.add(tryX);
+            } else if (tryZ.lengthSq() > 0 && !isObstacleInDirection(this.mesh.position, tryZ.clone().normalize(), 1.0)) {
+                this.mesh.position.add(tryZ);
+            }
+        }
+
+        // Map boundary clamp for expanded forest radius
+        const maxDist = 175;
+        const currentDist = Math.hypot(this.mesh.position.x, this.mesh.position.z);
+        if (currentDist > maxDist) {
+            const angle = Math.atan2(this.mesh.position.z, this.mesh.position.x);
+            this.mesh.position.x = Math.cos(angle) * maxDist;
+            this.mesh.position.z = Math.sin(angle) * maxDist;
+        }
+
+        // Prevent Fox from entering the Pond (Fox cannot swim)
+        const pondX = 45.0, pondZ = -35.0, pondRadius = 22.0;
+        const distToPond = Math.hypot(this.mesh.position.x - pondX, this.mesh.position.z - pondZ);
+        if (distToPond < pondRadius) {
+            const angle = Math.atan2(this.mesh.position.z - pondZ, this.mesh.position.x - pondX);
+            this.mesh.position.x = pondX + Math.cos(angle) * pondRadius;
+            this.mesh.position.z = pondZ + Math.sin(angle) * pondRadius;
+        }
 
         // 2. Vertical Movement & Physics (Jumping & Gravity)
-        const terrainHeight = getTerrainHeight(this.mesh.position.x, this.mesh.position.z);
-        const floorY = terrainHeight + this.yOffset + this.groundOffset;
+        const terrainY = getTerrainHeight(this.mesh.position.x, this.mesh.position.z);
+        const floorY = Math.max(0.0, terrainY + this.yOffset + this.groundOffset);
 
-        // If the fox was grounded and didn't jump, snap it to the slope
         if (this.isGrounded && !this.keys[" "]) {
             this.mesh.position.y = floorY;
             this.yVelocity = 0;
@@ -184,7 +230,6 @@ export class Fox {
             this.yVelocity += this.gravity * delta;
             this.mesh.position.y += this.yVelocity * delta;
 
-            // 3. Ground Collision
             if (this.mesh.position.y <= floorY) {
                 this.mesh.position.y = floorY;
                 this.yVelocity = 0;

@@ -1,41 +1,93 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { registerTerrainMesh } from './MathUtils.js';
 
 export class Terrain {
-    constructor() {
+    constructor(scene, onLoadCallback = null) {
+        this.scene = scene;
+        this.onLoadCallback = onLoadCallback;
         this.time = { value: 0 };
+        this.landscapeGroup = new THREE.Group();
+        this.scene.add(this.landscapeGroup);
 
-        this.geometry = new THREE.PlaneGeometry(160, 160, 160, 160);
+        // 1. Base extended ground plane (600x600) for seamless horizon
+        this.geometry = new THREE.PlaneGeometry(600, 600, 150, 150);
         this.material = new THREE.MeshStandardMaterial({
-            color: '#315f3b',
-            roughness: 1,
-            metalness: 0,
+            color: '#264e2e',
+            roughness: 0.92,
+            metalness: 0.05,
             flatShading: true,
         });
 
-        this.material.onBeforeCompile = (shader) => {
-            shader.uniforms.uTime = this.time;
+        const posAttr = this.geometry.attributes.position;
+        for (let i = 0; i < posAttr.count; i++) {
+            const x = posAttr.getX(i);
+            const y = posAttr.getY(i);
+            const h = Math.sin(x * 0.035) * 1.8 + Math.cos(y * 0.035) * 1.5 + Math.sin((x + y) * 0.07) * 0.8;
+            posAttr.setZ(i, h);
+        }
+        this.geometry.computeVertexNormals();
 
-            shader.vertexShader = `
-                uniform float uTime;
-            ` + shader.vertexShader;
+        this.baseMesh = new THREE.Mesh(this.geometry, this.material);
+        this.baseMesh.rotation.x = -Math.PI / 2;
+        this.baseMesh.position.y = 0.0;
+        this.baseMesh.receiveShadow = true;
+        this.landscapeGroup.add(this.baseMesh);
+        registerTerrainMesh(this.baseMesh);
 
-            shader.vertexShader = shader.vertexShader.replace(
-                '#include <begin_vertex>',
-                `
-                vec3 transformed = vec3(position);
-                float waveA = sin(transformed.x * 0.12 + uTime * 1.4) * 1.5;
-                float waveB = cos(transformed.y * 0.16 + uTime * 0.9) * 1.0;
-                transformed.z += waveA + waveB;
-                `
-            );
-        };
+        this.mesh = this.baseMesh;
 
-        this.mesh = new THREE.Mesh(this.geometry, this.material);
-        this.mesh.rotation.x = -Math.PI / 2;
-        this.mesh.receiveShadow = true;
+        // 2. Load 3D landscape model
+        this.loadLandscape();
+    }
+
+    loadLandscape() {
+        const loader = new GLTFLoader();
+        loader.load('/landscape.glb', (gltf) => {
+            const landscape = gltf.scene;
+
+            const rawBounds = new THREE.Box3().setFromObject(landscape);
+            const rawSize = rawBounds.getSize(new THREE.Vector3());
+            const maxDim = Math.max(rawSize.x, rawSize.z);
+            
+            const targetSpan = 360;
+            const scaleFactor = targetSpan / Math.max(maxDim, 0.001);
+            landscape.scale.setScalar(scaleFactor);
+
+            const scaledBounds = new THREE.Box3().setFromObject(landscape);
+            const center = scaledBounds.getCenter(new THREE.Vector3());
+            landscape.position.x -= center.x;
+            landscape.position.z -= center.z;
+            landscape.position.y -= scaledBounds.min.y;
+
+            landscape.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                    if (child.material) {
+                        child.material.roughness = 0.85;
+                        child.material.metalness = 0.05;
+                    }
+                    // Register ground/landscape plane meshes as terrain raycast targets.
+                    // Exclude tree foliage blocks and prop cubes to eliminate mid-air foliage hits and falling holes.
+                    const name = child.name.toLowerCase();
+                    if (name.includes('plane') || name.includes('ground') || name.includes('land') || name.includes('terrain')) {
+                        registerTerrainMesh(child);
+                    }
+                }
+            });
+
+            this.landscapeGroup.add(landscape);
+
+            if (this.onLoadCallback) {
+                this.onLoadCallback();
+            }
+        }, undefined, (err) => {
+            console.warn('Error loading landscape.glb:', err);
+        });
     }
 
     update(delta) {
-        // Intentionally static so the ground does not appear to flow under the fox.
+        // Keeps terrain updated
     }
 }

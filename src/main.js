@@ -9,6 +9,9 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 // World Modules
 import { Terrain } from './world/Terrain.js';
 import { Environment } from './world/Environment.js';
+import { ForestAssets } from './world/ForestAssets.js';
+import { Pond } from './world/Pond.js';
+import { FoxDen } from './world/FoxDen.js';
 import { Particles } from './world/Particles.js';
 import { Fox } from './world/Fox.js';
 import { Duck } from './world/Duck.js';
@@ -16,7 +19,7 @@ import { Duck } from './world/Duck.js';
 // --- 1. Core Engine Setup ---
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 6, 14);
+camera.position.set(0, 8, 18);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -31,10 +34,10 @@ controls.enableDamping = true;
 controls.enablePan = false;
 controls.enableZoom = true;
 controls.rotateSpeed = 0.65;
-controls.minDistance = 6;
-controls.maxDistance = 24;
-controls.minPolarAngle = 0.3;
-controls.maxPolarAngle = 1.35;
+controls.minDistance = 4;
+controls.maxDistance = 55;
+controls.minPolarAngle = 0.2;
+controls.maxPolarAngle = 1.45;
 
 const foxTargetOffset = new THREE.Vector3(0, 1.6, 0);
 const duckTargetOffset = new THREE.Vector3(0, 1.2, 0);
@@ -45,16 +48,27 @@ const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
 
 // UnrealBloomPass(Resolution, Strength, Radius, Threshold)
-const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.2, 0.5, 0.85);
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.1, 0.45, 0.85);
 composer.addPass(bloomPass);
 
 // --- 3. World Instantiation ---
 const environment = new Environment(scene);
-const terrain = new Terrain();
-scene.add(terrain.mesh);
-const particles = new Particles(scene, 2000);
+
+const pond = new Pond(scene);
+const foxDen = new FoxDen(scene);
+const forestAssets = new ForestAssets(scene);
+const particles = new Particles(scene, 4000);
 const fox = new Fox(scene, camera);
 const duck = new Duck(scene, camera);
+
+const snapAllToLandscape = () => {
+    pond.updatePosition();
+    foxDen.updatePosition();
+    fox.updateSpawnPosition();
+    duck.updateSpawnPosition();
+};
+
+const terrain = new Terrain(scene, snapAllToLandscape);
 
 // --- 4. Character Switching Logic & UI Integration ---
 let activeCharacter = 'fox';
@@ -163,6 +177,12 @@ const animate = () => {
     // Update all systems
     terrain.update(delta); 
     environment.update(delta);
+    pond.update(delta);
+
+    // Ensure positions snap to terrain as landscape finishes loading
+    if (elapsedTime < 3.0) {
+        snapAllToLandscape();
+    }
 
     // Update fireflies and fade them out in morning mode
     particles.update(delta);

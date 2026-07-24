@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { isObstacleInDirection } from './MathUtils.js';
 
 export class DuckController {
     constructor(duckMesh, camera, getTerrainHeightFn) {
@@ -8,19 +9,29 @@ export class DuckController {
 
         // --- Configuration Settings ---
         this.speed = 12.0;            // Horizontal movement speed
-        this.gravity = -30.0;         // Downward gravity force
+        this.gravity = -26.0;         // Downward gravity force
         this.jumpStrength = 12.0;     // Impulse applied when jumping from the ground
-        this.flapStrength = 8.5;      // Impulse added per flap key press while airborne
-        this.maxUpwardVelocity = 14.0; // Limits maximum ascent rate from rapid tapping
+        this.normalFlapStrength = 9.0;
+        this.normalMaxUpwardVel = 14.0;
+        this.flapStrength = 9.0;      // Current impulse added per flap key press
+        this.maxUpwardVelocity = 14.0; // Dynamic upward speed limit
 
         // Dynamic State
         this.yVelocity = 0.0;
         this.isGrounded = false;
+        this.isSwimming = false;
         this.active = false;
 
-        // Offsets
+        // Fatigue / Stamina System (Hidden)
+        this.flightTime = 0.0;
+        this.maxFlightDuration = 6.5; // Seconds of continuous flight before getting tired
+        this.isTired = false;
+
+        // Offsets & Pond parameters
         this.groundOffset = 0.0;
         this.yOffset = 0.2;
+        this.pondCenter = new THREE.Vector2(45.0, -35.0);
+        this.pondRadius = 20.5;
 
         // Inputs
         this.keys = {
@@ -34,9 +45,6 @@ export class DuckController {
         this.initPreallocated();
     }
 
-    /**
-     * Pre-allocates vector math helpers to avoid garbage collection overhead in the render loop.
-     */
     initPreallocated() {
         this._direction = new THREE.Vector3();
         this._velocity = new THREE.Vector3();
@@ -50,9 +58,8 @@ export class DuckController {
             if (!this.active) return;
             const key = e.key.toLowerCase();
 
-            // Detect space tap (transition from up to down) to trigger jumping/flapping
             if (key === ' ' || e.key === 'Spacebar') {
-                e.preventDefault(); // Prevent page scrolling
+                e.preventDefault();
                 this.triggerFlap();
             }
 
@@ -80,13 +87,16 @@ export class DuckController {
     triggerFlap() {
         if (!this.mesh) return;
 
-        if (this.isGrounded) {
-            // Jump from the ground
+        if (this.isGrounded || this.isSwimming) {
+            // Take off from ground or water
             this.yVelocity = this.jumpStrength;
             this.isGrounded = false;
+            this.isSwimming = false;
         } else {
-            // Flap wings in the air to gain height
-            this.yVelocity = Math.min(this.yVelocity + this.flapStrength, this.maxUpwardVelocity);
+            // Airborne wing flap (reduced impulse if tired)
+            const currentFlap = this.isTired ? 3.0 : this.flapStrength;
+            const maxUp = this.isTired ? 2.5 : this.maxUpwardVelocity;
+            this.yVelocity = Math.min(this.yVelocity + currentFlap, maxUp);
         }
     }
 
@@ -106,6 +116,10 @@ export class DuckController {
 
     update(delta) {
         if (!this.mesh) return;
+
+        const prevX = this.mesh.position.x;
+        const prevZ = this.mesh.position.z;
+        const prevY = this.mesh.position.y;
 
         // 1. Horizontal Movement relative to the camera direction
         this._direction.set(0, 0, 0);
@@ -128,10 +142,7 @@ export class DuckController {
         if (isMoving) {
             this._direction.normalize();
             
-            // Calculate target Y rotation angle
             const targetAngle = Math.atan2(this._direction.x, this._direction.z);
-            
-            // Interpolate mesh Y-rotation towards target angle
             const currentRotation = this.mesh.rotation.y;
             let diff = targetAngle - currentRotation;
             while (diff < -Math.PI) diff += Math.PI * 2;
@@ -139,39 +150,81 @@ export class DuckController {
             this.mesh.rotation.y += diff * 12.0 * delta;
         }
 
-        // Apply horizontal velocity
-        this._velocity.copy(this._direction).multiplyScalar(this.speed * delta);
-        this.mesh.position.add(this._velocity);
+        // Apply horizontal speed (slightly slower in water)
+        const currentSpeed = this.isSwimming ? this.speed * 0.65 : this.speed;
+        this._velocity.copy(this._direction).multiplyScalar(currentSpeed * delta);
 
-        // 2. Vertical Movement & Gravity
-        this.yVelocity += this.gravity * delta;
-        this.mesh.position.y += this.yVelocity * delta;
-
-        // 3. Ground Collision & Heightmap snapping (with slope hysteresis to prevent micro-falling jitter)
-        const terrainHeight = this.getTerrainHeight(this.mesh.position.x, this.mesh.position.z);
-        const floorY = terrainHeight + this.groundOffset + this.yOffset;
-        const snapDistance = 0.25; // Snapping range to glue to descending slopes
-
-        if (this.isGrounded && this.yVelocity <= 0.0) {
-            if (this.mesh.position.y <= floorY + snapDistance) {
-                this.mesh.position.y = floorY;
-                this.yVelocity = 0.0;
-                this.isGrounded = true;
-            } else {
-                this.isGrounded = false;
-            }
-        } else {
-            if (this.mesh.position.y <= floorY) {
-                this.mesh.position.y = floorY;
-                this.yVelocity = 0.0;
-                this.isGrounded = true;
-            } else {
-                this.isGrounded = false;
+        if (isMoving) {
+            const isBlocked = isObstacleInDirection(this.mesh.position, this._direction, 1.2);
+            if (!isBlocked) {
+                this.mesh.position.add(this._velocity);
             }
         }
 
-        // Force orientation upright (0 pitch and 0 roll)
-        this.mesh.rotation.x = 0;
-        this.mesh.rotation.z = 0;
+        // Map boundary clamp for expanded forest radius
+        const maxDist = 175;
+        const currentDist = Math.hypot(this.mesh.position.x, this.mesh.position.z);
+        if (currentDist > maxDist) {
+            const angle = Math.atan2(this.mesh.position.z, this.mesh.position.x);
+            this.mesh.position.x = Math.cos(angle) * maxDist;
+            this.mesh.position.z = Math.sin(angle) * maxDist;
+        }
+
+        // Check if Duck is inside the Pond Area
+        const distToPond = Math.hypot(this.mesh.position.x - this.pondCenter.x, this.mesh.position.z - this.pondCenter.y);
+        const inPondRegion = distToPond < this.pondRadius;
+
+        // 2. Flight Fatigue (Hidden Stamina) System
+        if (!this.isGrounded && !this.isSwimming) {
+            // Accumulate flight time while airborne
+            this.flightTime += delta;
+            if (this.flightTime > this.maxFlightDuration) {
+                this.isTired = true;
+            }
+        } else {
+            // Recover stamina while resting on ground or swimming
+            this.flightTime = Math.max(0.0, this.flightTime - delta * 2.8);
+            if (this.flightTime <= 0.0) {
+                this.isTired = false;
+            }
+        }
+
+        // 3. Vertical Physics & Flight Ceiling (Allow flying to mountain tops up to Y=65)
+        this.yVelocity += (this.isTired ? this.gravity * 1.3 : this.gravity) * delta;
+        this.mesh.position.y += this.yVelocity * delta;
+
+        // Max altitude ceiling (allow high mountain flights up to Y=65)
+        if (this.mesh.position.y > 65.0) {
+            this.mesh.position.y = 65.0;
+            this.yVelocity = 0;
+        }
+
+        // 4. Ground vs Swimming Collision
+        const terrainY = this.getTerrainHeight(this.mesh.position.x, this.mesh.position.z);
+        const floorY = Math.max(0.0, terrainY + this.groundOffset + this.yOffset);
+        const pondWaterY = floorY + 0.1;
+
+        if (inPondRegion && this.mesh.position.y <= pondWaterY + 0.5) {
+            // Floating & Swimming on Pond Water!
+            this.mesh.position.y = pondWaterY;
+            this.yVelocity = 0.0;
+            this.isSwimming = true;
+            this.isGrounded = false;
+        } else {
+            this.isSwimming = false;
+
+            if (this.isGrounded) {
+                this.mesh.position.y = floorY;
+                this.yVelocity = 0.0;
+            } else {
+                if (this.mesh.position.y <= floorY) {
+                    this.mesh.position.y = floorY;
+                    this.yVelocity = 0.0;
+                    this.isGrounded = true;
+                } else {
+                    this.isGrounded = false;
+                }
+            }
+        }
     }
 }

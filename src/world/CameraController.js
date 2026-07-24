@@ -1,41 +1,65 @@
 import * as THREE from 'three';
 
 export class CameraController {
-    constructor(camera, targetMesh) {
+    constructor(camera, controls) {
         this.camera = camera;
-        this.targetMesh = targetMesh;
+        this.controls = controls;
+        this.targetMesh = null;
         
-        // Adjusted for a true 3rd Person View
-        // Place the camera 8 units BEHIND (+Z) and 4 units ABOVE (+Y) the Fox
-        this.idealOffset = new THREE.Vector3(0, 4, 8); 
-        // Look slightly AHEAD (-Z) of the Fox so it sits comfortably in the bottom third of the screen
-        this.idealLookAt = new THREE.Vector3(0, 1, -5);   
+        // 3rd Person offset: 12 units behind, 5 units above
+        this.idealOffset = new THREE.Vector3(0, 4.8, 11.5); 
+        this.idealLookAt = new THREE.Vector3(0, 1.5, 0);   
         
-        this.currentPosition = new THREE.Vector3();
-        this.currentLookAt = new THREE.Vector3();
+        this.isUserOrbiting = false;
+        this.targetOffset = new THREE.Vector3(0, 1.5, 0);
+        
+        if (this.controls) {
+            this.controls.addEventListener('start', () => { this.isUserOrbiting = true; });
+            this.controls.addEventListener('end', () => { this.isUserOrbiting = false; });
+        }
+    }
 
-        this.tempPos = new THREE.Vector3();
-        this.tempLook = new THREE.Vector3();
+    setTarget(mesh) {
+        this.targetMesh = mesh;
     }
 
     update(delta) {
         if (!this.targetMesh) return;
 
-        this.tempPos.copy(this.idealOffset);
-        this.tempPos.applyQuaternion(this.targetMesh.quaternion);
-        this.tempPos.add(this.targetMesh.position);
+        const charPos = this.targetMesh.position;
 
-        this.tempLook.copy(this.idealLookAt);
-        this.tempLook.applyQuaternion(this.targetMesh.quaternion);
-        this.tempLook.add(this.targetMesh.position);
+        if (this.isUserOrbiting) {
+            // User is actively rotating the camera: target follows character position smoothly
+            const desiredTarget = charPos.clone().add(this.targetOffset);
+            this.controls.target.lerp(desiredTarget, 1.0 - Math.exp(-10.0 * delta));
+            this.controls.update();
+        } else {
+            // 3rd Person Game Camera Tracking
+            const desiredTarget = charPos.clone().add(this.targetOffset);
+            
+            // Smooth target follow (gives game-like camera spring lag when character starts moving)
+            const targetDamping = 4.5;
+            const targetLerp = 1.0 - Math.exp(-targetDamping * delta);
+            this.controls.target.lerp(desiredTarget, targetLerp);
 
-        const damping = 5.0; // Slightly stiffer damping for better 3rd person control
-        const lerpFactor = 1.0 - Math.exp(-damping * delta);
-        
-        this.currentPosition.lerp(this.tempPos, lerpFactor);
-        this.currentLookAt.lerp(this.tempLook, lerpFactor);
+            // Compute camera position behind character based on character facing direction
+            const offset = this.idealOffset.clone().applyQuaternion(this.targetMesh.quaternion);
+            const desiredCamPos = charPos.clone().add(offset);
 
-        this.camera.position.copy(this.currentPosition);
-        this.camera.lookAt(this.currentLookAt);
+            // Smooth camera position follow
+            const camDamping = 3.2;
+            const camLerp = 1.0 - Math.exp(-camDamping * delta);
+            this.camera.position.lerp(desiredCamPos, camLerp);
+
+            // Max camera follow leash: if character runs far ahead, camera follows up to max distance
+            const maxLeash = 18.0;
+            const currentDist = this.camera.position.distanceTo(charPos);
+            if (currentDist > maxLeash) {
+                const dir = this.camera.position.clone().sub(charPos).normalize();
+                this.camera.position.copy(charPos).add(dir.multiplyScalar(maxLeash));
+            }
+
+            this.controls.update();
+        }
     }
 }
