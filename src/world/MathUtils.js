@@ -26,7 +26,7 @@ export function clearTerrainMeshes() {
 }
 
 export function fallbackTerrainHeight(x, z) {
-    return Math.sin(x * 0.04) * 1.5 + Math.cos(z * 0.04) * 1.2;
+    return -0.4;
 }
 
 /**

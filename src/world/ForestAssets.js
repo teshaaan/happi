@@ -98,7 +98,7 @@ export class ForestAssets {
     populateForest(templates) {
         const count = 160; // Total scattered instances across expanded forest
         const minSpawnRadius = 12; // Keep immediate spawn area (0,0) clear
-        const maxSpawnRadius = 175; // Outer boundary
+        const maxSpawnRadius = 150; // Island landmass boundary
 
         for (let i = 0; i < count; i++) {
             // Random position using polar distribution for natural clustering

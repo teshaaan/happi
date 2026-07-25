@@ -1,44 +1,23 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { registerTerrainMesh } from './MathUtils.js';
+import { Ocean } from './Ocean.js';
+import { InvisibleBorder } from './InvisibleBorder.js';
 
 export class Terrain {
     constructor(scene, onLoadCallback = null) {
         this.scene = scene;
         this.onLoadCallback = onLoadCallback;
-        this.time = { value: 0 };
         this.landscapeGroup = new THREE.Group();
         this.scene.add(this.landscapeGroup);
 
-        // 1. Base extended ground plane (600x600) for seamless horizon
-        this.geometry = new THREE.PlaneGeometry(600, 600, 150, 150);
-        this.material = new THREE.MeshStandardMaterial({
-            color: '#264e2e',
-            roughness: 0.92,
-            metalness: 0.05,
-            flatShading: true,
-        });
+        // 1. Low-Poly ocean water surrounding the island
+        this.ocean = new Ocean(this.scene, 1400, -0.4);
 
-        const posAttr = this.geometry.attributes.position;
-        for (let i = 0; i < posAttr.count; i++) {
-            const x = posAttr.getX(i);
-            const y = posAttr.getY(i);
-            const h = Math.sin(x * 0.035) * 1.8 + Math.cos(y * 0.035) * 1.5 + Math.sin((x + y) * 0.07) * 0.8;
-            posAttr.setZ(i, h);
-        }
-        this.geometry.computeVertexNormals();
+        // 2. Invisible Border Wall around the island
+        this.invisibleBorder = new InvisibleBorder(this.scene, 160.0);
 
-        this.baseMesh = new THREE.Mesh(this.geometry, this.material);
-        this.baseMesh.rotation.x = -Math.PI / 2;
-        this.baseMesh.position.y = 0.0;
-        this.baseMesh.castShadow = true;
-        this.baseMesh.receiveShadow = true;
-        this.landscapeGroup.add(this.baseMesh);
-        registerTerrainMesh(this.baseMesh);
-
-        this.mesh = this.baseMesh;
-
-        // 2. Load 3D landscape model
+        // 3. Load 3D landscape model
         this.loadLandscape();
     }
 
@@ -85,6 +64,8 @@ export class Terrain {
     }
 
     update(delta) {
-        // Keeps terrain updated
+        if (this.ocean) {
+            this.ocean.update(delta);
+        }
     }
 }

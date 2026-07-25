@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { isObstacleInDirection } from './MathUtils.js';
+import { ISLAND_BORDER_RADIUS, clampPositionToIsland } from './InvisibleBorder.js';
 
 export class DuckController {
     constructor(duckMesh, camera, getTerrainHeightFn) {
@@ -161,14 +162,8 @@ export class DuckController {
             }
         }
 
-        // Map boundary clamp for expanded forest radius
-        const maxDist = 175;
-        const currentDist = Math.hypot(this.mesh.position.x, this.mesh.position.z);
-        if (currentDist > maxDist) {
-            const angle = Math.atan2(this.mesh.position.z, this.mesh.position.x);
-            this.mesh.position.x = Math.cos(angle) * maxDist;
-            this.mesh.position.z = Math.sin(angle) * maxDist;
-        }
+        // Invisible border clamp around the island
+        clampPositionToIsland(this.mesh.position, ISLAND_BORDER_RADIUS);
 
         // Check if Duck is inside the Pond Area
         const distToPond = Math.hypot(this.mesh.position.x - this.pondCenter.x, this.mesh.position.z - this.pondCenter.y);

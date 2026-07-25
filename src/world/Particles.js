@@ -145,9 +145,9 @@ export class Particles {
             const radius = Math.hypot(x, z);
 
             // Re-spawn fireflies if they drift off bounds
-            if (radius > 165) {
+            if (radius > 150) {
                 const angle = Math.random() * Math.PI * 2;
-                const resetRadius = 4 + Math.pow(Math.random(), 0.7) * 155;
+                const resetRadius = 4 + Math.pow(Math.random(), 0.7) * 142;
                 const newX = Math.cos(angle) * resetRadius;
                 const newZ = Math.sin(angle) * resetRadius;
                 const terrainY = getTerrainHeight(newX, newZ);

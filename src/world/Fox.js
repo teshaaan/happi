@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { getTerrainHeight, isObstacleInDirection } from './MathUtils.js';
+import { ISLAND_BORDER_RADIUS, clampPositionToIsland } from './InvisibleBorder.js';
 
 export class Fox {
     constructor(scene, camera) {
@@ -201,14 +202,8 @@ export class Fox {
             }
         }
 
-        // Map boundary clamp for expanded forest radius
-        const maxDist = 175;
-        const currentDist = Math.hypot(this.mesh.position.x, this.mesh.position.z);
-        if (currentDist > maxDist) {
-            const angle = Math.atan2(this.mesh.position.z, this.mesh.position.x);
-            this.mesh.position.x = Math.cos(angle) * maxDist;
-            this.mesh.position.z = Math.sin(angle) * maxDist;
-        }
+        // Invisible border clamp around the island
+        clampPositionToIsland(this.mesh.position, ISLAND_BORDER_RADIUS);
 
         // Prevent Fox from entering the Pond (Fox cannot swim)
         const pondX = 25.0, pondZ = -20.0, pondRadius = 20.0;

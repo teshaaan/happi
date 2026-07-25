@@ -113,6 +113,9 @@ export function initThreeScene(container) {
     
     terrain.update(delta);
     environment.update(delta);
+    if (terrain.ocean) {
+      terrain.ocean.setMorningProgress(environment.transitionProgress);
+    }
     pond.update(delta);
 
     if (elapsedTime < 3.0) {

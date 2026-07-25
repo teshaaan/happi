@@ -78,12 +78,13 @@ export class Environment {
         );
         this.scene.add(this.nightDome);
 
-        // 2. Morning sky dome (warm sunrise gradient)
+        // 2. Morning sky dome (vibrant sunrise gradient)
         const morningTexture = this.createCanvasTexture((context, width, height) => {
             const gradient = context.createLinearGradient(0, 0, 0, height);
-            gradient.addColorStop(0, '#3672d6');
-            gradient.addColorStop(0.55, '#6da1f8');
-            gradient.addColorStop(1, '#ffd699');
+            gradient.addColorStop(0, '#1a5fb4');
+            gradient.addColorStop(0.35, '#3584e4');
+            gradient.addColorStop(0.65, '#ff7800');
+            gradient.addColorStop(1, '#ffbe6f');
 
             context.fillStyle = gradient;
             context.fillRect(0, 0, width, height);
@@ -129,6 +130,11 @@ export class Environment {
         this.moonFillLight = new THREE.DirectionalLight('#7fa4db', 0.85);
         this.moonFillLight.position.set(-120, 140, 120);
         this.scene.add(this.moonFillLight);
+
+        // Warm Golden Morning Fill Light to make the island pop with color
+        this.sunFillLight = new THREE.DirectionalLight('#ffaa44', 0.0);
+        this.sunFillLight.position.set(120, 150, -120);
+        this.scene.add(this.sunFillLight);
     }
 
     setupMoon() {
@@ -244,7 +250,7 @@ export class Environment {
 
     setupSun() {
         // Sunlight Directional Light (acting as the Sun)
-        this.sunLight = new THREE.DirectionalLight('#fffaed', 0.0);
+        this.sunLight = new THREE.DirectionalLight('#fff3d1', 0.0);
         this.sunLight.position.set(-160, 200, 180);
         this.sunLight.castShadow = true;
         this.sunLight.shadow.mapSize.width = 2048;
@@ -262,41 +268,25 @@ export class Environment {
         this.scene.add(this.sunLight);
         this.scene.add(this.sunLight.target);
 
-        // Sun mesh texture
-        const sunTexture = this.createCanvasTexture((context, width, height) => {
-            const radius = width / 2;
-            const gradient = context.createRadialGradient(
-                radius * 0.42,
-                radius * 0.38,
-                radius * 0.1,
-                radius,
-                radius,
-                radius
-            );
-            gradient.addColorStop(0, '#ffffff');
-            gradient.addColorStop(0.35, '#fffae0');
-            gradient.addColorStop(0.8, '#ffeaad');
-            gradient.addColorStop(1, '#ffc766');
-            context.fillStyle = gradient;
-            context.fillRect(0, 0, width, height);
-        });
-
+        // Stylized Low-Poly Sun Mesh (Icosahedron with flatShading)
         this.sun = new THREE.Mesh(
-            new THREE.SphereGeometry(22.0, 48, 48),
+            new THREE.IcosahedronGeometry(22.0, 1),
             new THREE.MeshBasicMaterial({
-                map: sunTexture,
+                color: '#ffe066',
+                wireframe: false,
                 fog: false,
             })
         );
         this.sun.position.copy(this.sunLight.position);
         this.sun.scale.setScalar(0.001);
 
+        // Stylized Sun Glow Corona
         const glowTexture = this.createCanvasTexture((context, width, height) => {
             const radius = width / 2;
             const glow = context.createRadialGradient(radius, radius, radius * 0.08, radius, radius, radius);
-            glow.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
-            glow.addColorStop(0.2, 'rgba(255, 220, 150, 0.65)');
-            glow.addColorStop(0.6, 'rgba(255, 160, 80, 0.18)');
+            glow.addColorStop(0, 'rgba(255, 255, 200, 0.95)');
+            glow.addColorStop(0.25, 'rgba(255, 180, 50, 0.7)');
+            glow.addColorStop(0.65, 'rgba(255, 120, 20, 0.25)');
             glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
             context.fillStyle = glow;
             context.fillRect(0, 0, width, height);
@@ -305,16 +295,16 @@ export class Environment {
         this.sunGlow = new THREE.Sprite(
             new THREE.SpriteMaterial({
                 map: glowTexture,
-                color: '#ffe5b4',
+                color: '#ffc107',
                 transparent: true,
-                opacity: 0.85,
+                opacity: 0.9,
                 blending: THREE.AdditiveBlending,
                 depthWrite: false,
                 fog: false,
             })
         );
         this.sunGlow.position.copy(this.sun.position);
-        this.sunGlow.scale.set(160, 160, 1);
+        this.sunGlow.scale.set(220, 220, 1);
         this.sunGlow.scale.setScalar(0.001);
 
         this.scene.add(this.sun);
@@ -386,37 +376,38 @@ export class Environment {
 
         // 2. Background and Fog colors
         const nightSky = new THREE.Color('#060a1c');
-        const morningSky = new THREE.Color('#508cf5');
+        const morningSky = new THREE.Color('#3584e4');
         const currentSky = nightSky.clone().lerp(morningSky, t);
         this.scene.background = currentSky;
 
         const nightFog = new THREE.Color('#060a1c');
-        const morningFog = new THREE.Color('#9fc0f8');
+        const morningFog = new THREE.Color('#99d6ff');
         const currentFogColor = nightFog.clone().lerp(morningFog, t);
         this.scene.fog.color = currentFogColor;
 
-        const currentFogDensity = THREE.MathUtils.lerp(0.0045, 0.0035, t);
+        const currentFogDensity = THREE.MathUtils.lerp(0.0045, 0.0028, t);
         this.scene.fog.density = currentFogDensity;
 
         // 3. Hemisphere light settings
         const nightHemiSky = new THREE.Color('#4a68a0');
-        const morningHemiSky = new THREE.Color('#e8f0ff');
+        const morningHemiSky = new THREE.Color('#95d5ff');
         const currentHemiSky = nightHemiSky.clone().lerp(morningHemiSky, t);
 
         const nightHemiGround = new THREE.Color('#152218');
-        const morningHemiGround = new THREE.Color('#2d5a27');
+        const morningHemiGround = new THREE.Color('#388e3c');
         const currentHemiGround = nightHemiGround.clone().lerp(morningHemiGround, t);
 
         this.hemiLight.color = currentHemiSky;
         this.hemiLight.groundColor = currentHemiGround;
-        this.hemiLight.intensity = THREE.MathUtils.lerp(0.58, 0.85, t);
+        this.hemiLight.intensity = THREE.MathUtils.lerp(0.58, 1.4, t);
 
         // 4. Directional Lights intensities
         this.moonLight.intensity = THREE.MathUtils.lerp(2.2, 0.0, t);
         if (this.moonFillLight) this.moonFillLight.intensity = THREE.MathUtils.lerp(0.85, 0.0, t);
-        this.sunLight.intensity = THREE.MathUtils.lerp(0.0, 1.55, t);
+        this.sunLight.intensity = THREE.MathUtils.lerp(0.0, 2.6, t);
+        if (this.sunFillLight) this.sunFillLight.intensity = THREE.MathUtils.lerp(0.0, 1.2, t);
 
-        // 5. Sun and Moon scaling (appear/disappear)
+        // 5. Sun and Moon scaling & gentle low-poly sun rotation
         const moonScale = 1.0 - t;
         this.moon.scale.setScalar(Math.max(0.001, moonScale));
         this.moonGlowInner.scale.set(160 * moonScale, 160 * moonScale, 1.0);
@@ -426,8 +417,10 @@ export class Environment {
 
         const sunScale = t;
         this.sun.scale.setScalar(Math.max(0.001, sunScale));
-        this.sunGlow.scale.set(160 * sunScale, 160 * sunScale, 1.0);
-        this.sunGlow.material.opacity = 0.85 * sunScale;
+        this.sun.rotation.y += delta * 0.2;
+        this.sun.rotation.x += delta * 0.1;
+        this.sunGlow.scale.set(220 * sunScale, 220 * sunScale, 1.0);
+        this.sunGlow.material.opacity = 0.9 * sunScale;
 
         // 6. Clouds scaling and drifting
         this.clouds.scale.setScalar(THREE.MathUtils.lerp(0.001, 1.0, t));
