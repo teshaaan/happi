@@ -12,6 +12,7 @@ import { FoxDen } from './world/FoxDen.js';
 import { Particles } from './world/Particles.js';
 import { Fox } from './world/Fox.js';
 import { Duck } from './world/Duck.js';
+import { PlacementEditor } from './world/PlacementEditor.js';
 
 export function initThreeScene(container) {
   // 1. Core Engine Setup
@@ -59,6 +60,7 @@ export function initThreeScene(container) {
   const particles = new Particles(scene, 4000);
   const fox = new Fox(scene, camera);
   const duck = new Duck(scene, camera);
+  const placementEditor = new PlacementEditor(scene, camera, renderer.domElement, controls);
 
   const snapAllToLandscape = () => {
     pond.updatePosition();
@@ -99,6 +101,26 @@ export function initThreeScene(container) {
       document.body.classList.remove('morning-active');
       return 'night';
     }
+  };
+
+  const setPlacementEditorEnabled = (enabled) => {
+    placementEditor.setEnabled(enabled);
+    return placementEditor.updateSnapshot();
+  };
+
+  const setPlacementAsset = (assetPath) => {
+    placementEditor.loadAsset(assetPath);
+    return placementEditor.updateSnapshot();
+  };
+
+  const setPlacementMode = (mode) => {
+    placementEditor.setMode(mode);
+    return placementEditor.updateSnapshot();
+  };
+
+  const snapPlacementToGround = () => {
+    placementEditor.snapToGround();
+    return placementEditor.updateSnapshot();
   };
 
   // 4. Animation Loop
@@ -158,11 +180,17 @@ export function initThreeScene(container) {
   return {
     switchCharacter,
     toggleTheme,
+    setPlacementEditorEnabled,
+    setPlacementAsset,
+    setPlacementMode,
+    snapPlacementToGround,
+    getPlacementSnapshot: () => placementEditor.updateSnapshot(),
     getActiveCharacter: () => activeCharacter,
     getThemeMode: () => environment.targetMode,
     cleanup: () => {
       if (animId) cancelAnimationFrame(animId);
       window.removeEventListener('resize', handleResize);
+      placementEditor.dispose();
       renderer.dispose();
     }
   };

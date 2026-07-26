@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
 
+const PLACEMENT_ASSETS = [
+  { label: 'Shrine Statue', path: '/shinto_style_statueshrine.glb' },
+  { label: 'Rock Cave', path: '/low_poly_rock_cave.glb' },
+  { label: 'Cherry Tree', path: '/low-_poly_cherry_blossom_tree_3d_models.glb' },
+  { label: 'Tree Stump', path: '/stylized_tree_stump.glb' },
+  { label: 'Stylized Rock', path: '/stylized_rock_01.glb' },
+  { label: 'Mushroom', path: '/low_poly_fly_agaric.glb' },
+  { label: 'Fox', path: '/fox.glb' },
+  { label: 'Duck', path: '/duck.glb' },
+];
+
 export function UIOverlay({ threeSceneRef }) {
   // State for controls panel visibility
   const [isControlsOpen, setIsControlsOpen] = useState(true);
@@ -15,6 +26,12 @@ export function UIOverlay({ threeSceneRef }) {
 
   // State for active pressed keys (for visual keycap feedback)
   const [pressedKeys, setPressedKeys] = useState(new Set());
+
+  const [isPlacementOpen, setIsPlacementOpen] = useState(false);
+  const [placementAsset, setPlacementAsset] = useState(PLACEMENT_ASSETS[0].path);
+  const [placementMode, setPlacementMode] = useState('translate');
+  const [placementSnapshot, setPlacementSnapshot] = useState(null);
+  const [copyStatus, setCopyStatus] = useState('');
 
   // 1. Fullscreen Toggle Logic using Browser Fullscreen API
   const toggleFullscreen = () => {
@@ -60,7 +77,8 @@ export function UIOverlay({ threeSceneRef }) {
       ' ': 'Space',
       't': 'T', 'T': 'T',
       'c': 'C', 'C': 'C',
-      'f': 'F', 'F': 'F'
+      'f': 'F', 'F': 'F',
+      'p': 'P', 'P': 'P'
     };
 
     const handleKeyDown = (e) => {
@@ -79,6 +97,8 @@ export function UIOverlay({ threeSceneRef }) {
         toggleFullscreen();
       } else if (key === 't' || key === 'T') {
         handleSwitchCharacter(characterMode === 'fox' ? 'duck' : 'fox');
+      } else if (key === 'p' || key === 'P') {
+        handleTogglePlacement(!isPlacementOpen);
       }
     };
 
@@ -102,7 +122,13 @@ export function UIOverlay({ threeSceneRef }) {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [characterMode]);
+  }, [characterMode, isPlacementOpen]);
+
+  useEffect(() => {
+    if (!threeSceneRef.current) return;
+    const snapshot = threeSceneRef.current.setPlacementEditorEnabled(isPlacementOpen);
+    setPlacementSnapshot(snapshot);
+  }, [isPlacementOpen, threeSceneRef]);
 
   // 3. Character Switch Handler
   const handleSwitchCharacter = (mode) => {
@@ -122,6 +148,56 @@ export function UIOverlay({ threeSceneRef }) {
     } else {
       setThemeMode((prev) => (prev === 'night' ? 'morning' : 'night'));
     }
+  };
+
+  const handleTogglePlacement = (enabled) => {
+    setIsPlacementOpen(enabled);
+    if (threeSceneRef.current) {
+      const snapshot = threeSceneRef.current.setPlacementEditorEnabled(enabled);
+      setPlacementSnapshot(snapshot);
+    }
+  };
+
+  const handlePlacementAsset = (assetPath) => {
+    setPlacementAsset(assetPath);
+    setCopyStatus('');
+    if (threeSceneRef.current) {
+      const snapshot = threeSceneRef.current.setPlacementAsset(assetPath);
+      setPlacementSnapshot(snapshot);
+    }
+  };
+
+  const handlePlacementMode = (mode) => {
+    setPlacementMode(mode);
+    setCopyStatus('');
+    if (threeSceneRef.current) {
+      const snapshot = threeSceneRef.current.setPlacementMode(mode);
+      setPlacementSnapshot(snapshot);
+    }
+  };
+
+  const handleSnapPlacement = () => {
+    if (threeSceneRef.current) {
+      const snapshot = threeSceneRef.current.snapPlacementToGround();
+      setPlacementSnapshot(snapshot);
+      setCopyStatus('');
+    }
+  };
+
+  const handleRefreshPlacement = () => {
+    if (threeSceneRef.current) {
+      setPlacementSnapshot(threeSceneRef.current.getPlacementSnapshot());
+      setCopyStatus('');
+    }
+  };
+
+  const handleCopyPlacement = async () => {
+    const snapshot = threeSceneRef.current?.getPlacementSnapshot();
+    if (!snapshot?.code) return;
+
+    setPlacementSnapshot(snapshot);
+    await navigator.clipboard.writeText(snapshot.code);
+    setCopyStatus('Copied');
   };
 
   return (
@@ -170,6 +246,17 @@ export function UIOverlay({ threeSceneRef }) {
             <span className="shortcut-badge">C</span>
           </button>
 
+          <button
+            className={`hud-btn ${isPlacementOpen ? 'active' : ''}`}
+            onClick={() => handleTogglePlacement(!isPlacementOpen)}
+            aria-label="Toggle Placement Editor"
+            title="Toggle Placement Editor (P)"
+          >
+            <span className="btn-icon">📍</span>
+            <span className="hud-btn-text">Place</span>
+            <span className="shortcut-badge">P</span>
+          </button>
+
           {/* Theme Toggle Button */}
           <button
             className="hud-btn theme-toggle-btn"
@@ -189,11 +276,11 @@ export function UIOverlay({ threeSceneRef }) {
             title={isFullscreen ? "Exit Fullscreen (Esc / F)" : "Enter Fullscreen (F)"}
           >
             {isFullscreen ? (
-              <svg className="fullscreen-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg className="fullscreen-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
               </svg>
             ) : (
-              <svg className="fullscreen-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg className="fullscreen-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 2 2h3M3 16v3a2 2 0 0 0 2 2h3"></path>
               </svg>
             )}
@@ -318,6 +405,80 @@ export function UIOverlay({ threeSceneRef }) {
             Press <kbd className={`inline-kbd ${pressedKeys.has('C') ? 'pressed' : ''}`}>C</kbd> toggle UI • <kbd className={`inline-kbd ${pressedKeys.has('F') ? 'pressed' : ''}`}>F</kbd> Fullscreen
           </span>
         </div>
+      </div>
+
+      <div className={`placement-card glass-panel ${isPlacementOpen ? 'visible' : 'hidden'}`}>
+        <div className="placement-header">
+          <div>
+            <h3>Model Placement</h3>
+            <span>Drag the colored gizmo in the scene</span>
+          </div>
+          <button
+            className="card-close-btn"
+            onClick={() => handleTogglePlacement(false)}
+            aria-label="Close Placement Editor"
+            title="Close Placement Editor"
+          >
+            ✕
+          </button>
+        </div>
+
+        <label className="placement-field">
+          <span>Model</span>
+          <select value={placementAsset} onChange={(event) => handlePlacementAsset(event.target.value)}>
+            {PLACEMENT_ASSETS.map((asset) => (
+              <option key={asset.path} value={asset.path}>
+                {asset.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="placement-mode-group" aria-label="Transform mode">
+          {[
+            ['translate', 'Move'],
+            ['rotate', 'Rotate'],
+            ['scale', 'Scale'],
+          ].map(([mode, label]) => (
+            <button
+              key={mode}
+              className={placementMode === mode ? 'active' : ''}
+              onClick={() => handlePlacementMode(mode)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="placement-actions">
+          <button onClick={handleSnapPlacement}>Snap Ground</button>
+          <button onClick={handleRefreshPlacement}>Read Values</button>
+          <button onClick={handleCopyPlacement}>Copy Code</button>
+        </div>
+
+        <div className="placement-readout">
+          <div>
+            <span>Position</span>
+            <code>
+              x {placementSnapshot?.position.x ?? '0'} · y {placementSnapshot?.position.y ?? '0'} · z {placementSnapshot?.position.z ?? '0'}
+            </code>
+          </div>
+          <div>
+            <span>Rotation</span>
+            <code>
+              x {placementSnapshot?.rotation.x ?? '0'} · y {placementSnapshot?.rotation.y ?? '0'} · z {placementSnapshot?.rotation.z ?? '0'}
+            </code>
+          </div>
+          <div>
+            <span>Scale</span>
+            <code>
+              x {placementSnapshot?.scale.x ?? '1'} · y {placementSnapshot?.scale.y ?? '1'} · z {placementSnapshot?.scale.z ?? '1'}
+            </code>
+          </div>
+        </div>
+
+        <pre className="placement-code">{placementSnapshot?.code || '// Move the model, then press Read Values'}</pre>
+        {copyStatus && <div className="placement-copy-status">{copyStatus}</div>}
       </div>
 
       {/* Floating Action Button (FAB) shown when panel is collapsed */}

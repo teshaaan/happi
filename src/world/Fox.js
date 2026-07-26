@@ -77,7 +77,8 @@ export class Fox {
 
     updateSpawnPosition() {
         if (!this.mesh) return;
-        const spawnX = -32.0, spawnZ = 25.0;
+        // Spawn Fox inside the new Low-Poly Rock Cave den
+        const spawnX = -22.0, spawnZ = 18.0;
         const spawnY = getTerrainHeight(spawnX, spawnZ) + this.groundOffset + this.yOffset;
         this.mesh.position.set(spawnX, spawnY, spawnZ);
         this.isGrounded = true;
