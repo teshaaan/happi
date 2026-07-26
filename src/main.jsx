@@ -1,19 +1,35 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import { initThreeScene } from './threeScene.js';
 import { UIOverlay } from './components/UIOverlay.jsx';
 import './style.css';
 
-function App() {
+export function App() {
   const canvasContainerRef = useRef(null);
   const threeSceneRef = useRef(null);
+  const [sceneError, setSceneError] = useState('');
 
   useEffect(() => {
-    if (canvasContainerRef.current && !threeSceneRef.current) {
-      threeSceneRef.current = initThreeScene(canvasContainerRef.current);
-    }
+    let cancelled = false;
+
+    const startScene = async () => {
+      if (!canvasContainerRef.current || threeSceneRef.current) return;
+
+      try {
+        const { initThreeScene } = await import('./threeScene.js');
+        if (cancelled || !canvasContainerRef.current) return;
+        threeSceneRef.current = initThreeScene(canvasContainerRef.current);
+      } catch (error) {
+        console.error('Failed to start Three.js scene:', error);
+        if (!cancelled) {
+          setSceneError('The 3D world could not start. Check the browser console for details.');
+        }
+      }
+    };
+
+    startScene();
 
     return () => {
+      cancelled = true;
       if (threeSceneRef.current) {
         threeSceneRef.current.cleanup();
         threeSceneRef.current = null;
@@ -30,7 +46,7 @@ function App() {
         style={{
           position: 'absolute',
           inset: 0,
-          zIndex: -1,
+          zIndex: 0,
           width: '100vw',
           height: '100vh',
           overflow: 'hidden'
@@ -38,7 +54,7 @@ function App() {
       />
 
       {/* 2. Glassmorphism React UI Overlay */}
-      <UIOverlay threeSceneRef={threeSceneRef} />
+      <UIOverlay threeSceneRef={threeSceneRef} sceneError={sceneError} />
     </>
   );
 }
@@ -48,3 +64,5 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>
 );
+
+export default App;

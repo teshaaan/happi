@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { loadGLTF } from './AssetLoader.js';
 import { getTerrainHeight } from './MathUtils.js';
 import { DuckController } from './DuckController.js';
 
@@ -24,8 +24,7 @@ export class Duck {
     }
 
     initLoader() {
-        const loader = new GLTFLoader();
-        loader.load('/duck.glb', (gltf) => {
+        loadGLTF('/duck.glb', (gltf) => {
             // Create a wrapper group to normalize orientation (+Z forward)
             this.mesh = new THREE.Group();
             

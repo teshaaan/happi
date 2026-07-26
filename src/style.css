@@ -22,7 +22,8 @@
   --keycap-text: #ffffff;
 }
 
-.morning-active {
+.morning-active,
+.sunset-active {
   --glass-bg: rgba(255, 255, 255, 0.65);
   --glass-bg-hover: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(15, 23, 42, 0.12);
@@ -68,7 +69,7 @@ html, body {
   top: 0;
   left: 0;
   pointer-events: none;
-  z-index: 10;
+  z-index: 0;
   overflow: hidden;
 }
 
@@ -76,7 +77,7 @@ html, body {
 #canvas-container {
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
@@ -95,11 +96,27 @@ html, body {
   inset: 0;
   width: 100vw;
   height: 100vh;
+  z-index: 2;
   pointer-events: none;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+}
+
+.scene-error {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 10000;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border-radius: 12px;
+  transform: translate(-50%, -50%);
+  color: var(--text-main);
+  font-size: 13px;
+  line-height: 1.45;
+  pointer-events: auto;
 }
 
 /* --- Shared Glassmorphism Aesthetic --- */
@@ -607,7 +624,8 @@ html, body {
   pointer-events: auto;
 }
 
-.morning-active .placement-field select {
+.morning-active .placement-field select,
+.sunset-active .placement-field select {
   background: rgba(255, 255, 255, 0.95);
   color: #0f172a;
 }
@@ -735,5 +753,229 @@ html, body {
     bottom: 12px;
     width: calc(100vw - 24px);
     max-height: calc(100vh - 150px);
+  }
+
+  .poi-popup-overlay {
+    bottom: 16px;
+    right: 12px;
+    left: 12px;
+    width: calc(100vw - 24px);
+  }
+
+  .poi-card {
+    width: 100%;
+  }
+}
+
+/* --- Modern Nature Glassmorphism POI System --- */
+.poi-popup-overlay {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 99999;
+  pointer-events: auto;
+  animation: poiSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.modern-nature-glass {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(20, 40, 20, 0.45);
+  border: 1px solid rgba(150, 255, 150, 0.22);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  color: #ffffff;
+}
+
+.poi-card {
+  width: 380px;
+  max-width: calc(100vw - 40px);
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.poi-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.poi-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(150, 255, 150, 0.15);
+  border: 1px solid rgba(150, 255, 150, 0.3);
+  color: #a7f3d0;
+}
+
+.shrine-badge {
+  background: rgba(254, 240, 138, 0.2);
+  border: 1px solid rgba(253, 224, 71, 0.4);
+  color: #fde047;
+}
+
+.poi-title-group h2 {
+  margin: 6px 0 2px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.poi-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.poi-body p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.quest-completion-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.shrine-sparkle {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.poi-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.poi-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.primary-btn {
+  flex: 1;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.85), rgba(16, 185, 129, 0.95));
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.primary-btn:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 1), rgba(16, 185, 129, 1));
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+}
+
+.cv-btn {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.9), rgba(202, 138, 4, 1));
+  box-shadow: 0 4px 14px rgba(234, 179, 8, 0.45);
+}
+
+.cv-btn:hover {
+  background: linear-gradient(135deg, rgba(250, 204, 21, 1), rgba(234, 179, 8, 1));
+  box-shadow: 0 6px 20px rgba(234, 179, 8, 0.6);
+}
+
+.secondary-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.secondary-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.hud-poi-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.poi-hud-btn {
+  background: rgba(20, 40, 20, 0.45);
+  border-color: rgba(150, 255, 150, 0.2);
+}
+
+.poi-hud-btn:hover {
+  background: rgba(34, 197, 94, 0.25);
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+/* Shrine Quest HUD Badge */
+.hud-quest-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(20, 40, 20, 0.5);
+  border: 1px solid rgba(150, 255, 150, 0.25);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.hud-quest-badge.completed {
+  background: rgba(234, 179, 8, 0.2);
+  border-color: rgba(253, 224, 71, 0.5);
+}
+
+.quest-cv-btn {
+  background: rgba(234, 179, 8, 0.85);
+  border: none;
+  border-radius: 12px;
+  padding: 3px 10px;
+  color: #000;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.quest-cv-btn:hover {
+  transform: scale(1.05);
+}
+
+@keyframes poiSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }

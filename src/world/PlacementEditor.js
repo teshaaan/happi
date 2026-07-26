@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { loadGLTF } from './AssetLoader.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { getTerrainHeight } from './MathUtils.js';
 
@@ -8,7 +8,7 @@ export class PlacementEditor {
         this.scene = scene;
         this.camera = camera;
         this.orbitControls = orbitControls;
-        this.loader = new GLTFLoader();
+        this.loader = null;
         this.enabled = false;
         this.assetPath = '/shinto_style_statueshrine.glb';
         this.selected = null;
@@ -83,7 +83,7 @@ export class PlacementEditor {
         this.selected.scale.copy(previousScale);
         this.group.add(this.selected);
 
-        this.loader.load(assetPath, (gltf) => {
+        loadGLTF(assetPath, (gltf) => {
             const model = gltf.scene;
 
             const rawBounds = new THREE.Box3().setFromObject(model);

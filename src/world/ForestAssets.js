@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { loadGLTF } from './AssetLoader.js';
 import { getTerrainHeight } from './MathUtils.js';
 
 export class ForestAssets {
@@ -35,8 +35,7 @@ export class ForestAssets {
     }
 
     loadNatureAssets() {
-        const loader = new GLTFLoader();
-        loader.load('/natureassets.glb', (gltf) => {
+        loadGLTF('/natureassets.glb', (gltf) => {
             const root = gltf.scene;
 
             // Find all candidate top-level nodes in natureassets.glb
@@ -100,6 +99,9 @@ export class ForestAssets {
         const minSpawnRadius = 12; // Keep immediate spawn area (0,0) clear
         const maxSpawnRadius = 150; // Island landmass boundary
 
+        const templateMatrices = templates.map(() => []);
+        const dummy = new THREE.Object3D();
+
         for (let i = 0; i < count; i++) {
             // Random position using polar distribution for natural clustering
             const angle = Math.random() * Math.PI * 2;
@@ -109,46 +111,66 @@ export class ForestAssets {
 
             // Check distance to Pond reservation area
             const distToPond = Math.hypot(x - this.pondCenter.x, z - this.pondCenter.y);
-
-            // If inside pond basin, skip placing tall trees or large boulders
             if (distToPond < this.pondRadius - 2) {
                 continue;
             }
 
-            // Pick template (if near pond rim, favor rock / low bush templates)
-            let template;
+            let tIndex;
             if (distToPond >= this.pondRadius - 2 && distToPond <= this.pondRadius + 4) {
-                // Shoreline rim: place rocks or low vegetation
-                const rockTemplates = templates.filter(t => t.type === 'rock');
-                template = rockTemplates.length > 0 ? rockTemplates[i % rockTemplates.length] : templates[i % templates.length];
+                const rockIndices = templates.map((t, idx) => t.type === 'rock' ? idx : -1).filter(idx => idx !== -1);
+                tIndex = rockIndices.length > 0 ? rockIndices[i % rockIndices.length] : (i % templates.length);
             } else {
-                template = templates[i % templates.length];
+                tIndex = i % templates.length;
             }
 
-            const instance = template.object.clone(true);
-
-            // Height scaling factor
+            const template = templates[tIndex];
             let targetHeight = 6.0 + Math.random() * 8.0;
             if (template.type === 'rock') targetHeight = 1.5 + Math.random() * 2.5;
-            if (distToPond <= this.pondRadius + 4) targetHeight *= 0.6; // Smaller near shore
+            if (distToPond <= this.pondRadius + 4) targetHeight *= 0.6;
 
             const scaleRatio = targetHeight / Math.max(template.originalHeight, 0.5);
-            instance.scale.setScalar(scaleRatio);
 
-            // Random rotation
-            instance.rotation.y = Math.random() * Math.PI * 2;
-            instance.rotation.x = (Math.random() - 0.5) * 0.08;
-            instance.rotation.z = (Math.random() - 0.5) * 0.08;
+            dummy.position.set(0, 0, 0);
+            dummy.rotation.set((Math.random() - 0.5) * 0.08, Math.random() * Math.PI * 2, (Math.random() - 0.5) * 0.08);
+            dummy.scale.setScalar(scaleRatio);
+            dummy.updateMatrix();
 
-            // Calculate exact ground Y position using Raycast height map
             const terrainY = getTerrainHeight(x, z);
-            
-            // Adjust yOffset so asset sits snugly on ground
-            const bounds = new THREE.Box3().setFromObject(instance);
+            const bounds = new THREE.Box3().setFromObject(template.object).applyMatrix4(dummy.matrix);
             const minYOffset = bounds.min.y;
-            instance.position.set(x, terrainY - minYOffset, z);
 
-            this.container.add(instance);
+            dummy.position.set(x, terrainY - minYOffset, z);
+            dummy.updateMatrix();
+
+            templateMatrices[tIndex].push(dummy.matrix.clone());
         }
+
+        // Build GPU InstancedMesh for each submesh per template (cuts draw calls from ~400 down to ~15)
+        templates.forEach((template, tIdx) => {
+            const matrices = templateMatrices[tIdx];
+            if (matrices.length === 0) return;
+
+            const meshes = [];
+            template.object.traverse((child) => {
+                if (child.isMesh) meshes.push(child);
+            });
+
+            meshes.forEach((mesh) => {
+                const instancedMesh = new THREE.InstancedMesh(mesh.geometry, mesh.material, matrices.length);
+                instancedMesh.castShadow = true;
+                instancedMesh.receiveShadow = true;
+
+                const combinedMatrix = new THREE.Matrix4();
+                mesh.updateMatrix();
+
+                matrices.forEach((instanceMat, mIdx) => {
+                    combinedMatrix.multiplyMatrices(instanceMat, mesh.matrix);
+                    instancedMesh.setMatrixAt(mIdx, combinedMatrix);
+                });
+
+                instancedMesh.instanceMatrix.needsUpdate = true;
+                this.container.add(instancedMesh);
+            });
+        });
     }
 }

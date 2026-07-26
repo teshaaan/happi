@@ -2,9 +2,11 @@ import * as THREE from 'three';
 import { getTerrainHeight } from './MathUtils.js';
 
 export class Particles {
-    constructor(scene, count = 4000) {
+    constructor(scene, count = 1800) {
         this.scene = scene;
         this.count = count;
+        this.updateAccumulator = 0;
+        this.positionUpdateInterval = 1 / 24;
 
         const positions = new Float32Array(this.count * 3);
         this.scales = new Float32Array(this.count);
@@ -69,11 +71,11 @@ export class Particles {
             vertexColors: true,
             uniforms: {
                 uTime: { value: 0 },
-                uMorningProgress: { value: 0.0 }
+                uSunsetProgress: { value: 0.0 }
             },
             vertexShader: `
                 uniform float uTime;
-                uniform float uMorningProgress;
+                uniform float uSunsetProgress;
                 attribute float aScale;
                 attribute float aPhase;
                 attribute float aSpeed;
@@ -89,8 +91,8 @@ export class Particles {
                     float pulseB = cos(uTime * 1.3 + aPhase * 1.7);
                     vTwinkle = smoothstep(-0.4, 0.95, pulseA * 0.7 + pulseB * 0.3);
 
-                    // Fade out gracefully during Morning mode transition
-                    vAlpha = (1.0 - uMorningProgress) * (0.4 + 0.6 * vTwinkle);
+                    // Fade down during sunset, return brightly at midnight.
+                    vAlpha = (1.0 - uSunsetProgress * 0.88) * (0.42 + 0.58 * vTwinkle);
 
                     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
                     float distanceScale = 1.0 / max(0.5, -mvPosition.z);
@@ -126,6 +128,11 @@ export class Particles {
 
     update(delta = 0.016) {
         this.material.uniforms.uTime.value += delta;
+        this.updateAccumulator += delta;
+        if (this.updateAccumulator < this.positionUpdateInterval) return;
+
+        const step = this.updateAccumulator;
+        this.updateAccumulator = 0;
         const positions = this.geometry.attributes.position.array;
         const time = this.material.uniforms.uTime.value;
 
@@ -134,8 +141,8 @@ export class Particles {
             const v = this.velocities[i];
 
             // Organic drifting motion
-            positions[i3] += v.x;
-            positions[i3 + 2] += v.z;
+            positions[i3] += v.x * step * 60;
+            positions[i3 + 2] += v.z * step * 60;
 
             // Gentle vertical wave float relative to ground
             positions[i3 + 1] = v.baseY + Math.sin(this.phases[i] + time * this.speeds[i]) * 0.45;

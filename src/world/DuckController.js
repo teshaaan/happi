@@ -25,14 +25,14 @@ export class DuckController {
 
         // Fatigue / Stamina System (Hidden)
         this.flightTime = 0.0;
-        this.maxFlightDuration = 6.5; // Seconds of continuous flight before getting tired
+        this.maxFlightDuration = 3.8; // Seconds of continuous powered flight before the duck must glide down
         this.isTired = false;
 
         // Offsets & Pond parameters
         this.groundOffset = 0.0;
         this.yOffset = 0.2;
         this.pondCenter = new THREE.Vector2(25.0, -20.0);
-        this.pondRadius = 19.5;
+        this.pondRadius = 10.75;
 
         // Inputs
         this.keys = {
@@ -94,10 +94,8 @@ export class DuckController {
             this.isGrounded = false;
             this.isSwimming = false;
         } else {
-            // Airborne wing flap (reduced impulse if tired)
-            const currentFlap = this.isTired ? 3.0 : this.flapStrength;
-            const maxUp = this.isTired ? 2.5 : this.maxUpwardVelocity;
-            this.yVelocity = Math.min(this.yVelocity + currentFlap, maxUp);
+            if (this.isTired) return;
+            this.yVelocity = Math.min(this.yVelocity + this.flapStrength, this.maxUpwardVelocity);
         }
     }
 

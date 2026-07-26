@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { loadGLTF } from './AssetLoader.js';
 import { getTerrainHeight } from './MathUtils.js';
 
 export class StylizedRock {
@@ -11,8 +11,7 @@ export class StylizedRock {
     }
 
     loadRockModel() {
-        const loader = new GLTFLoader();
-        loader.load('/stylized_rock_01.glb', (gltf) => {
+        loadGLTF('/stylized_rock_01.glb', (gltf) => {
             const rawModel = gltf.scene;
 
             // 1. Normalize height scale to match PlacementEditor structure

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { loadGLTF } from './AssetLoader.js';
 import { registerTerrainMesh } from './MathUtils.js';
 import { Ocean } from './Ocean.js';
 import { InvisibleBorder } from './InvisibleBorder.js';
@@ -22,8 +22,7 @@ export class Terrain {
     }
 
     loadLandscape() {
-        const loader = new GLTFLoader();
-        loader.load('/landscape.glb', (gltf) => {
+        loadGLTF('/landscape.glb', (gltf) => {
             const landscape = gltf.scene;
 
             const rawBounds = new THREE.Box3().setFromObject(landscape);

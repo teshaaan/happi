@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { loadGLTF } from './AssetLoader.js';
 import { getTerrainHeight } from './MathUtils.js';
 
 export class MushroomPatch {
@@ -13,8 +13,7 @@ export class MushroomPatch {
     }
 
     loadMushroomModel() {
-        const loader = new GLTFLoader();
-        loader.load('/low_poly_fly_agaric.glb', (gltf) => {
+        loadGLTF('/low_poly_fly_agaric.glb', (gltf) => {
             const templateModel = gltf.scene;
 
             // 1. Normalize raw GLTF model to a 1.3m baseline height

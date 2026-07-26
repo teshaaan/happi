@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { loadGLTF } from './AssetLoader.js';
 
 export class TreeStump {
     constructor(scene) {
@@ -10,8 +10,7 @@ export class TreeStump {
     }
 
     loadStumpModel() {
-        const loader = new GLTFLoader();
-        loader.load('/stylized_tree_stump.glb', (gltf) => {
+        loadGLTF('/stylized_tree_stump.glb', (gltf) => {
             const rawModel = gltf.scene;
 
             // 1. Normalize height scale to match PlacementEditor structure

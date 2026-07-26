@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { getIslandBoundaryRadius } from './InvisibleBorder.js';
 
 export class Ocean {
     constructor(scene, size = 1400, seaLevel = -0.4) {
@@ -64,31 +65,67 @@ export class Ocean {
     }
 
     createShoreFoam() {
-        // Low-poly foam ring circling the island shoreline
-        const innerRadius = 152;
-        const outerRadius = 166;
-        const foamGeo = new THREE.RingGeometry(innerRadius, outerRadius, 64, 4);
-
         const foamMat = new THREE.MeshStandardMaterial({
             color: '#d4f2ff',
             roughness: 0.7,
             metalness: 0.05,
             flatShading: true,
             transparent: true,
-            opacity: 0.40,
+            opacity: 0.42,
             side: THREE.DoubleSide
         });
 
-        this.foamMesh = new THREE.Mesh(foamGeo, foamMat);
-        this.foamMesh.rotation.x = -Math.PI / 2;
-        this.foamMesh.position.set(0, this.seaLevel + 0.1, 0);
-        this.group.add(this.foamMesh);
+        this.foamMeshes = [];
+        [
+            { inner: -10, outer: 2, opacity: 0.36, y: 0.10 },
+            { inner: 5, outer: 12, opacity: 0.22, y: 0.16 },
+            { inner: 18, outer: 24, opacity: 0.14, y: 0.20 },
+        ].forEach((band, index) => {
+            const foamGeo = this.createOrganicRingGeometry(band.inner, band.outer, 144, index);
+            const material = foamMat.clone();
+            material.opacity = band.opacity;
+            const foamMesh = new THREE.Mesh(foamGeo, material);
+            foamMesh.rotation.x = -Math.PI / 2;
+            foamMesh.position.set(0, this.seaLevel + band.y, 0);
+            foamMesh.userData = { speed: 0.008 + index * 0.004, bob: 0.05 + index * 0.02, baseY: this.seaLevel + band.y };
+            this.foamMeshes.push(foamMesh);
+            this.group.add(foamMesh);
+        });
     }
 
-    setMorningProgress(t) {
+    createOrganicRingGeometry(innerOffset, outerOffset, segments, phase = 0) {
+        const vertices = [];
+        const indices = [];
+
+        for (let i = 0; i <= segments; i++) {
+            const angle = (i / segments) * Math.PI * 2;
+            const base = getIslandBoundaryRadius(angle, 154);
+            const ripple = Math.sin(angle * 11.0 + phase) * 1.8 + Math.cos(angle * 17.0 - phase) * 1.1;
+            const innerR = base + innerOffset + ripple;
+            const outerR = base + outerOffset + ripple * 1.25;
+
+            vertices.push(
+                Math.cos(angle) * innerR, Math.sin(angle) * innerR, 0,
+                Math.cos(angle) * outerR, Math.sin(angle) * outerR, 0
+            );
+        }
+
+        for (let i = 0; i < segments; i++) {
+            const a = i * 2;
+            indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        geometry.setIndex(indices);
+        geometry.computeVertexNormals();
+        return geometry;
+    }
+
+    setSunsetProgress(t) {
         if (!this.material) return;
         const nightColor = new THREE.Color('#0e2f47');
-        const sunsetColor = new THREE.Color('#12738a');
+        const sunsetColor = new THREE.Color('#2f7890');
         this.material.color.copy(nightColor).lerp(sunsetColor, t);
     }
 
@@ -96,9 +133,11 @@ export class Ocean {
         this.time.value += delta;
         
         // Gentle bobbing effect for the shoreline foam ring
-        if (this.foamMesh) {
-            this.foamMesh.position.y = this.seaLevel + 0.1 + Math.sin(this.time.value * 1.5) * 0.08;
-            this.foamMesh.rotation.z = this.time.value * 0.015;
+        if (this.foamMeshes) {
+            this.foamMeshes.forEach((mesh, index) => {
+                mesh.position.y = mesh.userData.baseY + Math.sin(this.time.value * 1.5 + index) * mesh.userData.bob;
+                mesh.rotation.z = this.time.value * mesh.userData.speed * (index % 2 === 0 ? 1 : -1);
+            });
         }
     }
 }

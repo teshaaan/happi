@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { loadGLTF } from './AssetLoader.js';
 import { getTerrainHeight } from './MathUtils.js';
 
 export class CherryTree {
@@ -16,8 +16,7 @@ export class CherryTree {
     }
 
     loadTreeModel() {
-        const loader = new GLTFLoader();
-        loader.load('/low-_poly_cherry_blossom_tree_3d_models.glb', (gltf) => {
+        loadGLTF('/low-_poly_cherry_blossom_tree_3d_models.glb', (gltf) => {
             const rawModel = gltf.scene;
 
             // 1. Normalize height scale to match PlacementEditor structure

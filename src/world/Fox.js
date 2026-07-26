@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { loadGLTF } from './AssetLoader.js';
 import { getTerrainHeight, isObstacleInDirection } from './MathUtils.js';
 import { ISLAND_BORDER_RADIUS, clampPositionToIsland } from './InvisibleBorder.js';
 import { CAVE_DEN_POSITION } from './FoxDen.js';
@@ -36,8 +36,7 @@ export class Fox {
     }
 
     initLoader() {
-        const loader = new GLTFLoader();
-        loader.load('/fox.glb', (gltf) => {
+        loadGLTF('/fox.glb', (gltf) => {
             this.mesh = gltf.scene;
 
             // Normalize imported models to a consistent in-world height.

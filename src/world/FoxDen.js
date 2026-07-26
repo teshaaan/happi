@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { loadGLTF } from './AssetLoader.js';
 import { getTerrainHeight } from './MathUtils.js';
 
 export const CAVE_DEN_POSITION = new THREE.Vector3(-39.56, 0, 29.95);
@@ -21,8 +21,7 @@ export class FoxDen {
     }
 
     loadCaveModel() {
-        const loader = new GLTFLoader();
-        loader.load('/low_poly_rock_cave.glb', (gltf) => {
+        loadGLTF('/low_poly_rock_cave.glb', (gltf) => {
             const rawModel = gltf.scene;
 
             // 1. Normalize height scale to match PlacementEditor preparation
