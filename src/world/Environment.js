@@ -138,7 +138,6 @@ export class Environment {
     }
 
     setupMoon() {
-        // High-resolution canvas texture for a big, detailed, luminous moon
         const moonTexture = this.createCanvasTexture((context, width, height) => {
             const radius = width / 2;
             const gradient = context.createRadialGradient(
@@ -157,7 +156,6 @@ export class Environment {
             context.fillStyle = gradient;
             context.fillRect(0, 0, width, height);
 
-            // Craters and surface detail
             const craterColors = ['#ccd4e2', '#aab4c7', '#eaf0fa', '#95a1b8'];
             for (let i = 0; i < 85; i++) {
                 const x = Math.random() * width;
@@ -172,7 +170,6 @@ export class Environment {
                 context.fill();
             }
 
-            // Radial surface shading for 3D sphere depth
             const lighting = context.createRadialGradient(radius * 0.36, radius * 0.30, radius * 0.05, radius, radius, radius);
             lighting.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
             lighting.addColorStop(0.45, 'rgba(255, 255, 255, 0.40)');
@@ -181,7 +178,6 @@ export class Environment {
             context.fillRect(0, 0, width, height);
         });
 
-        // Big, bright Moon mesh (Radius 28.0)
         this.moon = new THREE.Mesh(
             new THREE.SphereGeometry(28.0, 64, 64),
             new THREE.MeshBasicMaterial({
@@ -191,7 +187,6 @@ export class Environment {
         );
         this.moon.position.copy(this.moonLight.position);
 
-        // 1. Inner intense luminous moon core glow
         const innerGlowTexture = this.createCanvasTexture((context, width, height) => {
             const radius = width / 2;
             const glow = context.createRadialGradient(radius, radius, radius * 0.08, radius, radius, radius);
@@ -217,7 +212,6 @@ export class Environment {
         this.moonGlowInner.position.copy(this.moon.position);
         this.moonGlowInner.scale.set(160, 160, 1);
 
-        // 2. Outer soft celestial blue aura glow
         const outerGlowTexture = this.createCanvasTexture((context, width, height) => {
             const radius = width / 2;
             const glow = context.createRadialGradient(radius, radius, radius * 0.05, radius, radius, radius);

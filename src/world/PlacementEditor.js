@@ -120,7 +120,17 @@ export class PlacementEditor {
 
     snapToGround() {
         if (!this.selected) return;
-        this.selected.position.y = getTerrainHeight(this.selected.position.x, this.selected.position.z);
+        const x = this.selected.position.x;
+        const z = this.selected.position.z;
+        const terrainY = getTerrainHeight(x, z);
+
+        // Compute true lowest vertex Y position of rotated geometry
+        this.selected.position.y = 0;
+        this.selected.updateMatrixWorld(true);
+        const box = new THREE.Box3().setFromObject(this.selected);
+        const minY = box.min.y;
+
+        this.selected.position.y = Number((terrainY - minY).toFixed(2));
         this.updateSnapshot();
     }
 
@@ -161,14 +171,24 @@ export class PlacementEditor {
         const r = this.selected.rotation;
         const s = this.selected.scale;
 
+        const x = p.x.toFixed(2);
+        const y = p.y.toFixed(2);
+        const z = p.z.toFixed(2);
+        const rx = r.x.toFixed(3);
+        const ry = r.y.toFixed(3);
+        const rz = r.z.toFixed(3);
+        const sx = s.x.toFixed(3);
+        const sy = s.y.toFixed(3);
+        const sz = s.z.toFixed(3);
+
         return [
             `// ${this.assetPath}`,
-            `const x = ${p.x.toFixed(2)};`,
-            `const z = ${p.z.toFixed(2)};`,
-            `const terrainY = getTerrainHeight(x, z);`,
-            `model.position.set(x, terrainY, z);`,
-            `model.rotation.set(${r.x.toFixed(3)}, ${r.y.toFixed(3)}, ${r.z.toFixed(3)});`,
-            `model.scale.set(${s.x.toFixed(3)}, ${s.y.toFixed(3)}, ${s.z.toFixed(3)});`,
+            `const x = ${x};`,
+            `const y = ${y};`,
+            `const z = ${z};`,
+            `model.position.set(x, y, z);`,
+            `model.rotation.set(${rx}, ${ry}, ${rz});`,
+            `model.scale.set(${sx}, ${sy}, ${sz});`,
         ].join('\n');
     }
 

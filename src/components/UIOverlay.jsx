@@ -7,7 +7,6 @@ const PLACEMENT_ASSETS = [
   { label: 'Tree Stump', path: '/stylized_tree_stump.glb' },
   { label: 'Stylized Rock', path: '/stylized_rock_01.glb' },
   { label: 'Mushroom', path: '/low_poly_fly_agaric.glb' },
-  { label: 'Fox', path: '/fox.glb' },
   { label: 'Duck', path: '/duck.glb' },
 ];
 
@@ -19,7 +18,7 @@ export function UIOverlay({ threeSceneRef }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   
   // State for character mode ('fox' | 'duck')
-  const [characterMode, setCharacterMode] = useState('fox');
+  const [characterMode, setCharacterMode] = useState('duck');
 
   // State for theme mode ('night' | 'morning')
   const [themeMode, setThemeMode] = useState('night');
@@ -209,28 +208,6 @@ export function UIOverlay({ threeSceneRef }) {
           <span className="brand-name">HAPPI</span>
         </div>
 
-        {/* Character Switcher Tabs */}
-        <div className="character-selector" role="tablist">
-          <button
-            className={`selector-btn ${characterMode === 'fox' ? 'active' : ''}`}
-            onClick={() => handleSwitchCharacter('fox')}
-            role="tab"
-            aria-selected={characterMode === 'fox'}
-          >
-            <span className="btn-icon">🦊</span>
-            <span className="btn-text">Fox Mode</span>
-          </button>
-          <button
-            className={`selector-btn ${characterMode === 'duck' ? 'active' : ''}`}
-            onClick={() => handleSwitchCharacter('duck')}
-            role="tab"
-            aria-selected={characterMode === 'duck'}
-          >
-            <span className="btn-icon">🦆</span>
-            <span className="btn-text">Duck Flight</span>
-          </button>
-        </div>
-
         {/* Quick Actions Header Controls */}
         <div className="hud-actions">
           {/* Controls Panel Toggle Button */}
@@ -294,11 +271,11 @@ export function UIOverlay({ threeSceneRef }) {
       <div className={`controls-card glass-panel ${isControlsOpen ? 'visible' : 'hidden'}`}>
         <div className="card-header">
           <div className="card-title-group">
-            <span className="card-badge">{characterMode === 'fox' ? '🦊' : '🦆'}</span>
+            <span className="card-badge">🦆</span>
             <div className="title-sub-group">
-              <h3>{characterMode === 'fox' ? 'Fox Controls' : 'Duck Controls'}</h3>
+              <h3>Duck Flight Controls</h3>
               <span className="mode-tag">
-                {characterMode === 'fox' ? 'Ground Exploration' : 'Aerial Flight'}
+                Aerial Flight & Swimming
               </span>
             </div>
           </div>
@@ -314,89 +291,35 @@ export function UIOverlay({ threeSceneRef }) {
 
         {/* Controls Instructions List */}
         <div className="controls-list">
-          {characterMode === 'fox' ? (
-            <>
-              <div className="control-group">
-                <div className="keys-cluster">
-                  {['W', 'A', 'S', 'D'].map((key) => (
-                    <span
-                      key={key}
-                      className={`key-cap ${pressedKeys.has(key) ? 'pressed' : ''}`}
-                    >
-                      {key}
-                    </span>
-                  ))}
-                </div>
-                <span className="control-desc">Walk & Run</span>
-              </div>
+          <div className="control-group">
+            <div className="keys-cluster">
+              {['W', 'A', 'S', 'D'].map((key) => (
+                <span
+                  key={key}
+                  className={`key-cap ${pressedKeys.has(key) ? 'pressed' : ''}`}
+                >
+                  {key}
+                </span>
+              ))}
+            </div>
+            <span className="control-desc">Pitch / Roll / Steer</span>
+          </div>
 
-              <div className="control-group">
-                <div className="keys-cluster">
-                  <span className={`key-cap space-key ${pressedKeys.has('Space') ? 'pressed' : ''}`}>
-                    Space
-                  </span>
-                </div>
-                <span className="control-desc">Jump</span>
-              </div>
+          <div className="control-group">
+            <div className="keys-cluster">
+              <span className={`key-cap space-key ${pressedKeys.has('Space') ? 'pressed' : ''}`}>
+                Space
+              </span>
+            </div>
+            <span className="control-desc">Flap & Ascend</span>
+          </div>
 
-              <div className="control-group">
-                <div className="keys-cluster">
-                  <span className={`key-cap ${pressedKeys.has('T') ? 'pressed' : ''}`}>
-                    T
-                  </span>
-                </div>
-                <span className="control-desc">Switch Mode</span>
-              </div>
-
-              <div className="control-group">
-                <div className="keys-cluster">
-                  <span className="key-cap mouse-cap">🖱️ Drag</span>
-                </div>
-                <span className="control-desc">Orbit View</span>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="control-group">
-                <div className="keys-cluster">
-                  {['W', 'A', 'S', 'D'].map((key) => (
-                    <span
-                      key={key}
-                      className={`key-cap ${pressedKeys.has(key) ? 'pressed' : ''}`}
-                    >
-                      {key}
-                    </span>
-                  ))}
-                </div>
-                <span className="control-desc">Pitch / Roll / Steer</span>
-              </div>
-
-              <div className="control-group">
-                <div className="keys-cluster">
-                  <span className={`key-cap space-key ${pressedKeys.has('Space') ? 'pressed' : ''}`}>
-                    Space
-                  </span>
-                </div>
-                <span className="control-desc">Flap & Ascend</span>
-              </div>
-
-              <div className="control-group">
-                <div className="keys-cluster">
-                  <span className={`key-cap ${pressedKeys.has('T') ? 'pressed' : ''}`}>
-                    T
-                  </span>
-                </div>
-                <span className="control-desc">Switch Mode</span>
-              </div>
-
-              <div className="control-group">
-                <div className="keys-cluster">
-                  <span className="key-cap mouse-cap">🖱️ Drag</span>
-                </div>
-                <span className="control-desc">Orbit View</span>
-              </div>
-            </>
-          )}
+          <div className="control-group">
+            <div className="keys-cluster">
+              <span className="key-cap mouse-cap">🖱️ Drag</span>
+            </div>
+            <span className="control-desc">Orbit View</span>
+          </div>
         </div>
 
         <div className="card-footer">

@@ -9,6 +9,11 @@ import { Environment } from './world/Environment.js';
 import { ForestAssets } from './world/ForestAssets.js';
 import { Pond } from './world/Pond.js';
 import { FoxDen } from './world/FoxDen.js';
+import { ShrineStatue } from './world/ShrineStatue.js';
+import { StylizedRock } from './world/StylizedRock.js';
+import { TreeStump } from './world/TreeStump.js';
+import { CherryTree } from './world/CherryTree.js';
+import { MushroomPatch } from './world/MushroomPatch.js';
 import { Particles } from './world/Particles.js';
 import { Fox } from './world/Fox.js';
 import { Duck } from './world/Duck.js';
@@ -49,13 +54,18 @@ export function initThreeScene(container) {
   const renderPass = new RenderPass(scene, camera);
   composer.addPass(renderPass);
 
-  const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.1, 0.45, 0.85);
+  const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.35, 0.45, 0.92);
   composer.addPass(bloomPass);
 
   // 3. World Instantiation
   const environment = new Environment(scene);
   const pond = new Pond(scene);
   const foxDen = new FoxDen(scene);
+  const shrineStatue = new ShrineStatue(scene);
+  const stylizedRock = new StylizedRock(scene);
+  const treeStump = new TreeStump(scene);
+  const cherryTree = new CherryTree(scene);
+  const mushroomPatch = new MushroomPatch(scene);
   const forestAssets = new ForestAssets(scene);
   const particles = new Particles(scene, 4000);
   const fox = new Fox(scene, camera);
@@ -65,15 +75,20 @@ export function initThreeScene(container) {
   const snapAllToLandscape = () => {
     pond.updatePosition();
     foxDen.updatePosition();
+    shrineStatue.updatePosition();
+    stylizedRock.updatePosition();
+    treeStump.updatePosition();
+    cherryTree.updatePosition();
+    mushroomPatch.updatePosition();
     fox.updateSpawnPosition();
     duck.updateSpawnPosition();
   };
 
   const terrain = new Terrain(scene, snapAllToLandscape);
 
-  let activeCharacter = 'fox';
-  fox.setActive(true);
-  duck.setActive(false);
+  let activeCharacter = 'duck';
+  fox.setActive(false);
+  duck.setActive(true);
 
   const switchCharacter = (char) => {
     if (char === activeCharacter) return activeCharacter;
@@ -144,22 +159,16 @@ export function initThreeScene(container) {
       snapAllToLandscape();
     }
 
+    cherryTree.update(delta);
     particles.update(delta);
     if (particles.material && particles.material.uniforms.uMorningProgress) {
       particles.material.uniforms.uMorningProgress.value = environment.transitionProgress;
     }
 
-    fox.update(delta, elapsedTime);
     duck.update(delta);
 
-    if (activeCharacter === 'fox') {
-      if (fox.mesh) {
-        controls.target.copy(fox.mesh.position).add(foxTargetOffset);
-      }
-    } else {
-      if (duck.mesh) {
-        controls.target.copy(duck.mesh.position).add(duckTargetOffset);
-      }
+    if (duck.mesh) {
+      controls.target.copy(duck.mesh.position).add(duckTargetOffset);
     }
     controls.update();
 

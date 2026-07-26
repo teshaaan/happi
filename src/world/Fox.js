@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { getTerrainHeight, isObstacleInDirection } from './MathUtils.js';
 import { ISLAND_BORDER_RADIUS, clampPositionToIsland } from './InvisibleBorder.js';
+import { CAVE_DEN_POSITION } from './FoxDen.js';
 
 export class Fox {
     constructor(scene, camera) {
@@ -58,6 +59,7 @@ export class Fox {
 
             // Spawn Fox at the Fox Den entrance (-32, 25)
             this.updateSpawnPosition();
+            this.mesh.visible = this.active;
             
             this.scene.add(this.mesh);
             this.mixer = new THREE.AnimationMixer(this.mesh);
@@ -78,7 +80,7 @@ export class Fox {
     updateSpawnPosition() {
         if (!this.mesh) return;
         // Spawn Fox inside the new Low-Poly Rock Cave den
-        const spawnX = -22.0, spawnZ = 18.0;
+        const spawnX = CAVE_DEN_POSITION.x, spawnZ = CAVE_DEN_POSITION.z;
         const spawnY = getTerrainHeight(spawnX, spawnZ) + this.groundOffset + this.yOffset;
         this.mesh.position.set(spawnX, spawnY, spawnZ);
         this.isGrounded = true;
@@ -100,6 +102,9 @@ export class Fox {
 
     setActive(active) {
         this.active = active;
+        if (this.mesh) {
+            this.mesh.visible = active;
+        }
         if (!active) {
             // Reset keys
             this.keys.w = false;

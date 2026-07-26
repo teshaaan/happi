@@ -20,14 +20,14 @@ export class Ocean {
         // Low-Poly plane with high segment density for faceted wave details
         const geometry = new THREE.PlaneGeometry(this.size, this.size, 140, 140);
 
-        // Low-poly water material with smooth specular highlights & flat shading
+        // Low-poly water material with soft roughness to eliminate specular glare
         this.material = new THREE.MeshStandardMaterial({
-            color: '#156294',
-            roughness: 0.18,
-            metalness: 0.25,
+            color: '#12557a',
+            roughness: 0.65,
+            metalness: 0.05,
             flatShading: true,
             transparent: true,
-            opacity: 0.92,
+            opacity: 0.90,
             side: THREE.DoubleSide
         });
 
@@ -71,11 +71,11 @@ export class Ocean {
 
         const foamMat = new THREE.MeshStandardMaterial({
             color: '#d4f2ff',
-            roughness: 0.4,
-            metalness: 0.1,
+            roughness: 0.7,
+            metalness: 0.05,
             flatShading: true,
             transparent: true,
-            opacity: 0.45,
+            opacity: 0.40,
             side: THREE.DoubleSide
         });
 
@@ -87,9 +87,9 @@ export class Ocean {
 
     setMorningProgress(t) {
         if (!this.material) return;
-        const nightColor = new THREE.Color('#104068');
-        const morningColor = new THREE.Color('#00b4d8');
-        this.material.color.copy(nightColor).lerp(morningColor, t);
+        const nightColor = new THREE.Color('#0e2f47');
+        const sunsetColor = new THREE.Color('#12738a');
+        this.material.color.copy(nightColor).lerp(sunsetColor, t);
     }
 
     update(delta) {
