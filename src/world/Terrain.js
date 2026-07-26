@@ -40,6 +40,9 @@ export class Terrain {
             landscape.position.z -= center.z;
             landscape.position.y -= scaledBounds.min.y;
 
+            // Ensure landscape and all children matrices are updated before raycasting registration
+            landscape.updateMatrixWorld(true);
+
             landscape.traverse((child) => {
                 if (child.isMesh) {
                     child.castShadow = true;
@@ -54,6 +57,7 @@ export class Terrain {
             });
 
             this.landscapeGroup.add(landscape);
+            this.landscapeGroup.updateMatrixWorld(true);
 
             if (this.onLoadCallback) {
                 this.onLoadCallback();

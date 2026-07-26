@@ -3,9 +3,9 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { getTerrainHeight } from './MathUtils.js';
 
 export const SHRINE_POSITIONS = [
-    { x: -45.99, z: -41.00, rotY: 0.0 },
-    { x: -56.38, z: -23.00, rotY: 2.094 },
-    { x: -35.60, z: -23.00, rotY: -2.094 }
+    { x: -60.99, z: -41.00, rotY: 0.0 },
+    { x: -71.38, z: -23.00, rotY: 2.094 },
+    { x: -50.60, z: -23.00, rotY: -2.094 }
 ];
 
 export class ShrineStatue {
