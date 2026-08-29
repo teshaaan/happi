@@ -1,11 +1,14 @@
 import * as THREE from 'three';
 import { getTerrainHeight } from './MathUtils.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export class Pond {
     constructor(scene, center = new THREE.Vector2(25, -20), radius = 11.5) {
         this.scene = scene;
         this.center = center;
         this.radius = radius;
+
+        globalTelemetry.recordEvent('pond_init', { radius });
 
         this.group = new THREE.Group();
         this.scene.add(this.group);

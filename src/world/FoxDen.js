@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { loadGLTF } from './AssetLoader.js';
 import { getTerrainHeight } from './MathUtils.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export const CAVE_DEN_POSITION = new THREE.Vector3(-39.56, 0, 29.95);
 
@@ -10,6 +11,7 @@ export class FoxDen {
         this.model = null;
         this.visible = true; // Visible rock cave asset
 
+        globalTelemetry.recordEvent('foxden_construct', { x: CAVE_DEN_POSITION.x, z: CAVE_DEN_POSITION.z });
         this.loadCaveModel();
     }
 

@@ -20,8 +20,11 @@ import { Duck } from './world/Duck.js';
 import { PlacementEditor } from './world/PlacementEditor.js';
 import { getTerrainHeight } from './world/MathUtils.js';
 import { preloadGLTF } from './world/AssetLoader.js';
+import { globalTelemetry } from './services/telemetryService.js';
 
 export function initThreeScene(container) {
+  globalTelemetry.recordEvent('three_scene_init_start', { timestamp: Date.now() });
+
   // 1. Core Engine Setup
   const scene = new THREE.Scene();
   const getViewportSize = () => ({

@@ -1,11 +1,14 @@
 import * as THREE from 'three';
 import { getIslandBoundaryRadius } from './InvisibleBorder.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export class Ocean {
     constructor(scene, size = 1400, seaLevel = -0.4) {
         this.scene = scene;
         this.size = size;
         this.seaLevel = seaLevel;
+
+        globalTelemetry.recordEvent('ocean_init', { size, seaLevel });
 
         this.group = new THREE.Group();
         this.scene.add(this.group);

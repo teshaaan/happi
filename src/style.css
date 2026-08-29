@@ -13,6 +13,10 @@
   --text-muted: #9ca3af;
   --text-accent: #c084fc;
 
+  /* Refactored Subsystem Overlay Tokens */
+  --telemetry-status-bg: rgba(15, 23, 42, 0.75);
+  --telemetry-status-border: rgba(147, 51, 234, 0.4);
+
   --accent-purple: #c084fc;
   --accent-glow: rgba(192, 132, 252, 0.35);
 

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { getTerrainHeight } from './MathUtils.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 const LANDMARK_CLUSTERS = [
     { x: 11.66, z: 88.35, color: '#76ff5f', count: 42, radius: 8.2, height: 9.2 }, // tree stump
@@ -18,6 +19,8 @@ export class LandmarkBlobs {
         this.baseY = [];
         this.heightOffset = [];
         this.floatAmp = [];
+
+        globalTelemetry.recordEvent('landmark_blobs_construct', { clusterCount: LANDMARK_CLUSTERS.length });
         this.floatSpeed = [];
 
         const count = LANDMARK_CLUSTERS.reduce((total, cluster) => total + cluster.count, 0);

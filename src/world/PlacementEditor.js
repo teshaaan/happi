@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { loadGLTF } from './AssetLoader.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { getTerrainHeight } from './MathUtils.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export class PlacementEditor {
     constructor(scene, camera, rendererDomElement, orbitControls) {
@@ -10,6 +11,8 @@ export class PlacementEditor {
         this.orbitControls = orbitControls;
         this.loader = null;
         this.enabled = false;
+        
+        globalTelemetry.recordEvent('placement_editor_init', { timestamp: Date.now() });
         this.assetPath = '/shinto_style_statueshrine.glb';
         this.selected = null;
         this.innerModel = null;

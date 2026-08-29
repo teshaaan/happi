@@ -2,6 +2,7 @@ import { Cache } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export const MODEL_PATHS = [
     '/landscape.glb',
@@ -29,6 +30,7 @@ const gltfCache = new Map();
 
 function getGLTF(path) {
     if (!gltfCache.has(path)) {
+        globalTelemetry.recordEvent('asset_load_request', { path });
         gltfCache.set(path, gltfLoader.loadAsync(path));
     }
     return gltfCache.get(path);

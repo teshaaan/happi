@@ -3,6 +3,7 @@ import { loadGLTF } from './AssetLoader.js';
 import { getTerrainHeight, isObstacleInDirection } from './MathUtils.js';
 import { ISLAND_BORDER_RADIUS, clampPositionToIsland } from './InvisibleBorder.js';
 import { CAVE_DEN_POSITION } from './FoxDen.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export class Fox {
     constructor(scene, camera) {
@@ -12,6 +13,8 @@ export class Fox {
         this.mixer = null;
         this.animations = {};
         this.currentAction = null;
+        
+        globalTelemetry.recordEvent('fox_construct', { timestamp: Date.now() });
         
         // Added spacebar mapping
         this.keys = { w: false, a: false, s: false, d: false, " ": false };

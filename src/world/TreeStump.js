@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { loadGLTF } from './AssetLoader.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export class TreeStump {
     constructor(scene) {
         this.scene = scene;
         this.model = null;
 
+        globalTelemetry.recordEvent('stump_construct', { timestamp: Date.now() });
         this.loadStumpModel();
     }
 

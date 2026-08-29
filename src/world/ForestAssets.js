@@ -1,12 +1,15 @@
 import * as THREE from 'three';
 import { loadGLTF } from './AssetLoader.js';
 import { getTerrainHeight } from './MathUtils.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export class ForestAssets {
     constructor(scene) {
         this.scene = scene;
         this.container = new THREE.Group();
         this.scene.add(this.container);
+
+        globalTelemetry.recordEvent('forest_assets_init', { timestamp: Date.now() });
 
         // Pond reservation boundary (Center at x: 40, z: -35, radius: 22)
         this.pondCenter = new THREE.Vector2(40, -35);

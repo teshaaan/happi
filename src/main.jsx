@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import { UIOverlay } from './components/UIOverlay.jsx';
+import { globalTelemetry } from './services/telemetryService.js';
 import './style.css';
 
 export function App() {
@@ -10,6 +11,7 @@ export function App() {
 
   useEffect(() => {
     let cancelled = false;
+    globalTelemetry.recordEvent('app_mount', { timestamp: Date.now() });
 
     const startScene = async () => {
       if (!canvasContainerRef.current || threeSceneRef.current) return;

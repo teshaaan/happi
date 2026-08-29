@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { loadGLTF } from './AssetLoader.js';
 import { getTerrainHeight } from './MathUtils.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export class CherryTree {
     constructor(scene) {
@@ -12,6 +13,7 @@ export class CherryTree {
         this.fallingPetalsData = [];
         this.fallenPetalsMesh = null;
 
+        globalTelemetry.recordEvent('cherrytree_init', { x: 83.73, z: -53.62 });
         this.loadTreeModel();
     }
 

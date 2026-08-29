@@ -3,13 +3,17 @@ import { loadGLTF } from './AssetLoader.js';
 import { registerTerrainMesh } from './MathUtils.js';
 import { Ocean } from './Ocean.js';
 import { InvisibleBorder } from './InvisibleBorder.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export class Terrain {
     constructor(scene, onLoadCallback = null) {
         this.scene = scene;
         this.onLoadCallback = onLoadCallback;
         this.landscapeGroup = new THREE.Group();
+        this.landscapeGroup.name = 'Subsystem_Terrain_Group';
         this.scene.add(this.landscapeGroup);
+
+        globalTelemetry.recordEvent('terrain_init_start', { timestamp: Date.now() });
 
         // 1. Low-Poly ocean water surrounding the island
         this.ocean = new Ocean(this.scene, 1400, -0.4);

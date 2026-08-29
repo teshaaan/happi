@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { getTerrainHeight } from './MathUtils.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export class Particles {
     constructor(scene, count = 1800) {
@@ -7,6 +8,8 @@ export class Particles {
         this.count = count;
         this.updateAccumulator = 0;
         this.positionUpdateInterval = 1 / 24;
+
+        globalTelemetry.recordEvent('particles_init', { count });
 
         const positions = new Float32Array(this.count * 3);
         this.scales = new Float32Array(this.count);

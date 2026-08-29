@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import { loadGLTF } from './AssetLoader.js';
 import { getTerrainHeight } from './MathUtils.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export class StylizedRock {
     constructor(scene) {
         this.scene = scene;
         this.model = null;
 
+        globalTelemetry.recordEvent('stylized_rock_init', { timestamp: Date.now() });
         this.loadRockModel();
     }
 
