@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { loadGLTF } from './AssetLoader.js';
 import { getTerrainHeight } from './MathUtils.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export const SHRINE_POSITIONS = [
     { x: -60.99, z: -41.00, rotY: 0.0 },
@@ -15,6 +16,7 @@ export class ShrineStatue {
         this.container = new THREE.Group();
         this.scene.add(this.container);
 
+        globalTelemetry.recordEvent('shrine_statue_init', { count: SHRINE_POSITIONS.length });
         this.loadShrineModel();
     }
 

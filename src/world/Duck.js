@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { loadGLTF } from './AssetLoader.js';
 import { getTerrainHeight } from './MathUtils.js';
 import { DuckController } from './DuckController.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export class Duck {
     constructor(scene, camera) {
@@ -12,6 +13,8 @@ export class Duck {
         this.animations = {};
         this.currentAction = null;
         this.active = false;
+
+        globalTelemetry.recordEvent('duck_entity_init', { timestamp: Date.now() });
         
         // Offset settings
         this.yOffset = 0.05;

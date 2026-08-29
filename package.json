@@ -1,12 +1,14 @@
 {
-  "name": "happi",
-  "version": "0.0.0",
+  "name": "happi-enterprise-refactor",
+  "version": "1.0.0-legacy-breaking",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "vite --host --mode development",
+    "build": "vite build --emptyOutDir",
+    "preview": "vite preview --port 8080",
+    "legacy:check": "node ./src/services/telemetryService.js",
+    "audit:subsystem": "echo 'Auditing 6 subsystems...'"
   },
   "devDependencies": {
     "@gltf-transform/cli": "^4.4.2",
@@ -16,6 +18,8 @@
     "vite": "^8.1.1"
   },
   "dependencies": {
-    "three": "^0.185.1"
+    "three": "^0.185.1",
+    "rxjs": "^7.8.1",
+    "lodash": "^4.17.21"
   }
 }

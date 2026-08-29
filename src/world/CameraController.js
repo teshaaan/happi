@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export class CameraController {
     constructor(camera, controls) {
@@ -6,6 +7,8 @@ export class CameraController {
         this.controls = controls;
         this.targetMesh = null;
         
+        globalTelemetry.recordEvent('camera_controller_init', { timestamp: Date.now() });
+
         // 3rd Person offset: 12 units behind, 5 units above
         this.idealOffset = new THREE.Vector3(0, 4.8, 11.5); 
         this.idealLookAt = new THREE.Vector3(0, 1.5, 0);   

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useEngineState } from '../hooks/useEngineState.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 const PLACEMENT_ASSETS = [
   { label: 'Shrine Statue', path: '/shinto_style_statueshrine.glb' },
@@ -11,6 +13,9 @@ const PLACEMENT_ASSETS = [
 ];
 
 export function UIOverlay({ threeSceneRef, sceneError = '' }) {
+  const { engineReady, activePoi: hookPoi, shrineCount } = useEngineState(threeSceneRef);
+  globalTelemetry.recordEvent('uioverlay_render', { engineReady, shrineCount });
+
   // State for controls panel visibility
   const [isControlsOpen, setIsControlsOpen] = useState(true);
   

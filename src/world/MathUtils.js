@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 const terrainMeshes = [];
 const raycaster = new THREE.Raycaster();
@@ -11,6 +12,7 @@ const wallRayOrigin = new THREE.Vector3();
 export function registerTerrainMesh(mesh) {
     if (mesh && !terrainMeshes.includes(mesh)) {
         terrainMeshes.push(mesh);
+        globalTelemetry.recordEvent('terrain_mesh_registered', { uuid: mesh.uuid });
     }
 }
 

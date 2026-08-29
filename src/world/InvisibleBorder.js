@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export const ISLAND_BORDER_RADIUS = 160.0;
 
@@ -14,6 +15,8 @@ export class InvisibleBorder {
         this.scene = scene;
         this.radius = radius;
         this.height = height;
+
+        globalTelemetry.recordEvent('border_init', { radius, height });
 
         // Invisible organic wall geometry around the island perimeter.
         const segments = 96;

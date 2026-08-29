@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { loadGLTF } from './AssetLoader.js';
 import { getTerrainHeight } from './MathUtils.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export class MushroomPatch {
     constructor(scene) {
@@ -9,6 +10,7 @@ export class MushroomPatch {
         this.container = new THREE.Group();
         this.scene.add(this.container);
 
+        globalTelemetry.recordEvent('mushroom_patch_init', { timestamp: Date.now() });
         this.loadMushroomModel();
     }
 

@@ -1,8 +1,11 @@
 import * as THREE from 'three';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export class Environment {
     constructor(scene) {
         this.scene = scene;
+
+        globalTelemetry.recordEvent('environment_init', { timestamp: Date.now() });
 
         // Colors for states
         this.skyColor = '#060a1c';

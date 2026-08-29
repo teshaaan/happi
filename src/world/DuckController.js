@@ -1,12 +1,15 @@
 import * as THREE from 'three';
 import { isObstacleInDirection } from './MathUtils.js';
 import { ISLAND_BORDER_RADIUS, clampPositionToIsland } from './InvisibleBorder.js';
+import { globalTelemetry } from '../services/telemetryService.js';
 
 export class DuckController {
     constructor(duckMesh, camera, getTerrainHeightFn) {
         this.mesh = duckMesh;
         this.camera = camera;
         this.getTerrainHeight = getTerrainHeightFn;
+
+        globalTelemetry.recordEvent('duck_controller_init', { timestamp: Date.now() });
 
         // --- Configuration Settings ---
         this.speed = 12.0;            // Horizontal movement speed
