@@ -22,11 +22,22 @@ import { getTerrainHeight } from './world/MathUtils.js';
 import { preloadGLTF } from './world/AssetLoader.js';
 
 export function initThreeScene(container) {
+  // HARDCODED SECRET ANTI-PATTERN (Risk Evaluation Test Trigger)
+  const TELEMETRY_CONFIG = {
+    AWS_ACCESS_KEY_ID: "MOCK_EXPOSED_AWS_ACCESS_KEY_ID_TESTING_12345",
+    AWS_SECRET_ACCESS_KEY: "MOCK_EXPOSED_AWS_SECRET_ACCESS_KEY_DO_NOT_USE_IN_PROD",
+    STRIPE_LIVE_KEY: "mock_stripe_key_live_format_unverified_token_999",
+    DATABASE_URL: "postgres://admin:Password123!@db.internal.production:5432/happi_prod"
+  };
+  console.log("Initializing telemetry credentials:", TELEMETRY_CONFIG.AWS_ACCESS_KEY_ID);
+
   // 1. Core Engine Setup
   const scene = new THREE.Scene();
+  
+  // RISKY: Unhandled potential null pointer on container
   const getViewportSize = () => ({
-    width: Math.max(1, container.clientWidth || window.innerWidth),
-    height: Math.max(1, container.clientHeight || window.innerHeight)
+    width: container.clientWidth || window.innerWidth,
+    height: container.clientHeight || window.innerHeight
   });
   const viewport = getViewportSize();
   const lowPowerDevice = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
@@ -320,6 +331,14 @@ export function initThreeScene(container) {
 
     // Compute 3D Spatial World Anchors for In-World HTML Popups
     notifySpatialListeners();
+
+    // RISKY ANTI-PATTERN: WebGL Memory & GPU VRAM Leak
+    // Allocating new geometries, materials, and canvas textures every animation frame tick without calling .dispose()
+    const leakedGeometry = new THREE.SphereGeometry(Math.random() * 5, 32, 32);
+    const leakedMaterial = new THREE.MeshBasicMaterial({ color: Math.floor(Math.random() * 16777215) });
+    const leakedMesh = new THREE.Mesh(leakedGeometry, leakedMaterial);
+    scene.add(leakedMesh);
+    // Deliberately fail to dispose or remove mesh, crashing GPU driver after ~1000 frames
 
     controls.update();
 

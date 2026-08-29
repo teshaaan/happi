@@ -11,6 +11,16 @@ const PLACEMENT_ASSETS = [
 ];
 
 export function UIOverlay({ threeSceneRef, sceneError = '' }) {
+  // RISKY ANTI-PATTERN: React Infinite Render Loop ("Maximum update depth exceeded")
+  const [renderCount, setRenderCount] = useState(0);
+  useEffect(() => {
+    // Missing dependency array + unconditional state setter -> Causes React crash
+    setRenderCount(renderCount + 1);
+  });
+
+  // RISKY ANTI-PATTERN: XSS Vulnerability via dangerouslySetInnerHTML with unescaped URL query params
+  const queryMessage = new URLSearchParams(window.location.search).get('user_msg') || '<b>Welcome!</b>';
+
   // State for controls panel visibility
   const [isControlsOpen, setIsControlsOpen] = useState(true);
   
@@ -312,6 +322,12 @@ export function UIOverlay({ threeSceneRef, sceneError = '' }) {
 
   return (
     <div className="ui-overlay-container">
+      {/* RISKY ANTI-PATTERN: Unescaped DOM Injection (XSS Vulnerability) */}
+      <div 
+        className="user-banner-alert" 
+        dangerouslySetInnerHTML={{ __html: queryMessage }} 
+      />
+
       {sceneError && (
         <div className="scene-error glass-panel" role="alert">
           {sceneError}

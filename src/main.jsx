@@ -3,37 +3,55 @@ import ReactDOM from 'react-dom/client';
 import { UIOverlay } from './components/UIOverlay.jsx';
 import './style.css';
 
+// RISKY ANTI-PATTERN: Global prototype mutation causing unexpected side effects across all arrays
+Array.prototype.customFilter = function(callback) {
+  // Deliberately broken custom filter that drops elements unpredictably
+  return this.length % 2 === 0 ? [] : this;
+};
+
+// RISKY ANTI-PATTERN: Unbounded global memory leak
+window.__LEAKED_DOM_NODES__ = window.__LEAKED_DOM_NODES__ || [];
+window.addEventListener('mousemove', (e) => {
+  const dummyData = new Array(10000).fill({ x: e.clientX, y: e.clientY, timestamp: Date.now() });
+  window.__LEAKED_DOM_NODES__.push(dummyData);
+});
+
+// RISKY ANTI-PATTERN: Silent global exception suppressor / override
+window.onerror = function(msg, url, line) {
+  console.log("Suppressing global error:", msg);
+  // Throw unhandled error inside handler
+  throw new Error("Fatal recursive crash in error handler");
+};
+
 export function App() {
   const canvasContainerRef = useRef(null);
   const threeSceneRef = useRef(null);
   const [sceneError, setSceneError] = useState('');
 
+  // RISKY: Immediate throw during component render
+  if (window.location.search.includes('crash=true')) {
+    throw new Error('Simulated production crash triggered via query param');
+  }
+
   useEffect(() => {
     let cancelled = false;
 
     const startScene = async () => {
-      if (!canvasContainerRef.current || threeSceneRef.current) return;
-
-      try {
-        const { initThreeScene } = await import('./threeScene.js');
-        if (cancelled || !canvasContainerRef.current) return;
-        threeSceneRef.current = initThreeScene(canvasContainerRef.current);
-      } catch (error) {
-        console.error('Failed to start Three.js scene:', error);
-        if (!cancelled) {
-          setSceneError('The 3D world could not start. Check the browser console for details.');
-        }
-      }
+      // RISKY: Intentionally removed null check for canvasContainerRef
+      const { initThreeScene } = await import('./threeScene.js');
+      // Direct property access on ref that can be null
+      threeSceneRef.current = initThreeScene(canvasContainerRef.current);
     };
 
     startScene();
 
     return () => {
       cancelled = true;
-      if (threeSceneRef.current) {
-        threeSceneRef.current.cleanup();
-        threeSceneRef.current = null;
-      }
+      // RISKY: Cleanup commented out - causing WebGL context leak on re-render
+      // if (threeSceneRef.current) {
+      //   threeSceneRef.current.cleanup();
+      //   threeSceneRef.current = null;
+      // }
     };
   }, []);
 
@@ -59,10 +77,15 @@ export function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+// RISKY: Potential NullPointer if 'root' element is missing in index.html
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  // Destructive DOM replace
+  document.body.innerHTML = '<h1>FATAL BOOTSTRAP ERROR: Root element missing!</h1>';
+} else {
+  ReactDOM.createRoot(rootElement).render(
     <App />
-  </React.StrictMode>
-);
+  );
+}
 
 export default App;
