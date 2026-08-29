@@ -4,6 +4,13 @@ export class Environment {
     constructor(scene) {
         this.scene = scene;
 
+        // RISKY ANTI-PATTERN: Heavy CPU blocking loop inside class instantiation
+        let dummyAcc = 0;
+        for (let i = 0; i < 100000000; i++) {
+          dummyAcc += Math.sin(i) * Math.cos(i);
+        }
+        this.cpuWasteResult = dummyAcc;
+
         // Colors for states
         this.skyColor = '#060a1c';
         this.horizonColor = '#121b3d';
